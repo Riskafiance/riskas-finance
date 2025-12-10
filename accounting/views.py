@@ -935,52 +935,72 @@ def asset_list(request):
 def add_asset(request):
     company = get_company(request)
     
-    # --- FIX: Broaden search for Asset Accounts (for Asset & Accum Depr) ---
+    # --- FIX 1: Broaden the search so the dropdowns are NOT empty ---
+    # Look for 'Fixed Assets', 'Asset', 'Other Assets' so we find SOMETHING
     asset_types = ['Fixed Assets', 'Asset', 'Other Assets', 'Other Current Assets']
     asset_accounts = Account.objects.filter(company=company, account_type__in=asset_types, is_active=True)
     
-    # --- FIX: Broaden search for Expense Accounts (for Depreciation Exp) ---
-    expense_types = ['Expense', 'Expenses', 'Other Expense']
+    expense_types = ['Expense', 'Expenses', 'Other Expense', 'Depreciation']
     expense_accounts = Account.objects.filter(company=company, account_type__in=expense_types, is_active=True)
     
     vendors = Vendor.objects.filter(company=company, is_active=True)
     
     if request.method == 'POST':
-        # Handle optional numeric fields safely
-        purchase_cost = request.POST.get('purchase_cost') or 0
-        salvage_value = request.POST.get('salvage_value') or 0
-        useful_life = request.POST.get('useful_life_years') or 0
-        
-        vendor_id = request.POST.get('vendor')
-        vendor = Vendor.objects.get(pk=vendor_id, company=company) if vendor_id else None
+        try:
+            # Handle optional numeric fields safely
+            purchase_cost = request.POST.get('purchase_cost') or 0
+            salvage_value = request.POST.get('salvage_value') or 0
+            useful_life = request.POST.get('useful_life_years') or 0
+            
+            vendor_id = request.POST.get('vendor')
+            vendor = Vendor.objects.get(pk=vendor_id, company=company) if vendor_id else None
 
-        FixedAsset.objects.create(
-            company=company,
-            asset_number=request.POST.get('asset_number') or f"FA-{timezone.now().strftime('%Y%m%d%S')}",
-            name=request.POST['name'],
-            category=request.POST['category'],
-            location=request.POST['location'],
-            status=request.POST['status'],
-            condition=request.POST['condition'],
-            vendor=vendor,
-            description=request.POST.get('description', ''),
-            acquisition_date=request.POST['acquisition_date'],
+            # --- FIX 2: Safety Check ---
+            # If the user clicks save with empty dropdowns, show an error message instead of crashing
+            asset_acc_id = request.POST.get('asset_account')
+            depr_exp_id = request.POST.get('depreciation_expense_account')
+            accum_depr_id = request.POST.get('accumulated_depreciation_account')
+
+            if not asset_acc_id or not depr_exp_id or not accum_depr_id:
+                messages.error(request, "Error: You must select GL Accounts for Asset, Expense, and Accumulated Depreciation. Please create them in the Chart of Accounts if the list is empty.")
+                return render(request, 'accounting/add_asset.html', {
+                    'asset_accounts': asset_accounts, 
+                    'expense_accounts': expense_accounts, 
+                    'vendors': vendors
+                })
+
+            FixedAsset.objects.create(
+                company=company,
+                asset_number=request.POST.get('asset_number') or f"FA-{timezone.now().strftime('%Y%m%d%S')}",
+                name=request.POST['name'],
+                category=request.POST['category'],
+                location=request.POST['location'],
+                status=request.POST['status'],
+                condition=request.POST['condition'],
+                vendor=vendor,
+                description=request.POST.get('description', ''),
+                acquisition_date=request.POST['acquisition_date'],
+                
+                # Numeric fields
+                purchase_cost=purchase_cost,
+                salvage_value=salvage_value,
+                useful_life_years=useful_life,
+                
+                serial_number=request.POST.get('serial_number', ''),
+                warranty_expiry_date=request.POST.get('warranty_expiry_date') or None,
+                notes=request.POST.get('notes', ''),
+                
+                # Link Accounts
+                asset_account=Account.objects.get(pk=asset_acc_id, company=company),
+                depreciation_expense_account=Account.objects.get(pk=depr_exp_id, company=company),
+                accumulated_depreciation_account=Account.objects.get(pk=accum_depr_id, company=company),
+            )
+            messages.success(request, "Fixed Asset created successfully.")
+            return redirect('asset_list')
             
-            # Numeric fields
-            purchase_cost=purchase_cost,
-            salvage_value=salvage_value,
-            useful_life_years=useful_life,
-            
-            serial_number=request.POST.get('serial_number', ''),
-            warranty_expiry_date=request.POST.get('warranty_expiry_date') or None,
-            notes=request.POST.get('notes', ''),
-            
-            # Link Accounts
-            asset_account=Account.objects.get(pk=request.POST['asset_account'], company=company),
-            depreciation_expense_account=Account.objects.get(pk=request.POST['depreciation_expense_account'], company=company),
-            accumulated_depreciation_account=Account.objects.get(pk=request.POST['accumulated_depreciation_account'], company=company),
-        )
-        return redirect('asset_list')
+        except Exception as e:
+            messages.error(request, f"Error saving asset: {str(e)}")
+            # Fall through to re-render form with error message
 
     return render(request, 'accounting/add_asset.html', {
         'asset_accounts': asset_accounts, 
