@@ -1,3 +1,4 @@
+import re  # <--- ADD THIS LINE at the very top
 import random
 from django.core.mail import send_mail
 from django.conf import settings
@@ -284,9 +285,23 @@ def vendor_list(request):
 def add_vendor(request):
     company = get_company(request)
     if request.method == 'POST':
+        # --- PHONE FORMATTING LOGIC ---
+        raw_phone = request.POST.get('phone', '')
+        # Remove everything that is not a number
+        digits = re.sub(r'\D', '', raw_phone)
+        # If it is 10 digits, format it as (XXX) XXX-XXXX
+        formatted_phone = raw_phone
+        if len(digits) == 10:
+            formatted_phone = f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        # ------------------------------
+
         Vendor.objects.create(
-            company=company, # Link
-            name=request.POST['name'], address=request.POST['address'], email=request.POST['email'], phone=request.POST['phone']
+            company=company,
+            name=request.POST['name'],
+            email=request.POST.get('email', ''),
+            phone=formatted_phone,  # <--- Save the formatted version
+            address=request.POST.get('address', ''),
+            account_number=request.POST.get('account_number', '')
         )
         return redirect('vendor_list')
     return render(request, 'accounting/add_vendor.html')
@@ -327,25 +342,23 @@ def customer_list(request):
 @login_required
 def add_customer(request):
     company = get_company(request)
-    
     if request.method == 'POST':
-        name = request.POST['name']
-        try:
-            Customer.objects.create(
-                company=company,
-                name=name,
-                address=request.POST['address'],
-                email=request.POST['email'],
-                phone=request.POST['phone']
-            )
-            return redirect('customer_list')
-            
-        except Exception:
-            # If duplicate or other error, reload page with error message
-            return render(request, 'accounting/add_customer.html', {
-                'error': f"Error: A customer named '{name}' already exists."
-            })
+        # --- PHONE FORMATTING LOGIC ---
+        raw_phone = request.POST.get('phone', '')
+        digits = re.sub(r'\D', '', raw_phone)
+        formatted_phone = raw_phone
+        if len(digits) == 10:
+            formatted_phone = f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        # ------------------------------
 
+        Customer.objects.create(
+            company=company,
+            name=request.POST['name'],
+            email=request.POST.get('email', ''),
+            phone=formatted_phone,  # <--- Save the formatted version
+            address=request.POST.get('address', '')
+        )
+        return redirect('customer_list')
     return render(request, 'accounting/add_customer.html')
 
 @login_required
