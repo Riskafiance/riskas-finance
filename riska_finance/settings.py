@@ -144,3 +144,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'Amarildiriska15@gmail.com'  # <--- PUT YOUR EMAIL HERE
 EMAIL_HOST_PASSWORD = 'fney cqqp imzl ggod'  # <--- PUT YOUR GOOGLE APP PASSWORD HERE
 DEFAULT_FROM_EMAIL = 'Riska Finance <riskas.finances@gmail.com>'
+
+# TRUSTED ORIGINS (Required for Railway/HTTPS)
+CSRF_TRUSTED_ORIGINS = [
+    'https://riskas-finance.up.railway.app',
+]
