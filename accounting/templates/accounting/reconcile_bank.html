@@ -1,0 +1,167 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Reconciliation: {{ bank_account.name }}</h2>
+        <a href="{% url 'bank_account_list' %}" class="btn btn-outline-secondary">Back to Bank List</a>
+    </div>
+    <p class="text-muted">GL Account: {{ bank_account.gl_account.account_number }} - {{ bank_account.gl_account.account_name }}</p>
+    
+    <div class="card mb-4 bg-light border-0 shadow-sm">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small fw-bold text-muted">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small fw-bold text-muted">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Filter Period</button>
+                    {% if start_date %}
+                        <a href="{% url 'reconcile_bank' bank_account.id %}" class="btn btn-outline-danger ms-2">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span>Bank Statement (Uploaded)</span>
+                    <span class="badge bg-white text-primary">{{ bank_lines.count }} Items</span>
+                </div>
+                <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Desc</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b_line in bank_lines %}
+                            <tr>
+                                <td>{{ b_line.date }}</td>
+                                <td class="small">{{ b_line.description|truncatechars:20 }}</td>
+                                <td class="fw-bold {% if b_line.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ b_line.amount }}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary select-bank" data-id="{{ b_line.id }}">Select</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center p-3 text-muted">No unmatched bank lines in this period. <br><a href="{% url 'upload_bank_statement' bank_account.id %}">Upload CSV</a></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <span>System Transactions (GL)</span>
+                    <span class="badge bg-white text-success">{{ system_lines.count }} Items</span>
+                </div>
+                <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Ref</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s_line in system_lines %}
+                            <tr>
+                                <td>{{ s_line.journal_voucher.jv_date }}</td>
+                                <td class="small">{{ s_line.journal_voucher.jv_number }}</td>
+                                <td class="fw-bold">
+                                    {% if s_line.debit_amount > 0 %}
+                                        <span class="text-success">+{{ s_line.debit_amount }}</span>
+                                    {% else %}
+                                        <span class="text-danger">-{{ s_line.credit_amount }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-success match-btn" data-id="{{ s_line.id }}">Match</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center p-3 text-muted">No unmatched transactions in this period.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedBankId = null;
+
+        document.querySelectorAll('.select-bank').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Visual Feedback
+                document.querySelectorAll('.select-bank').forEach(b => {
+                    b.classList.remove('active', 'btn-primary');
+                    b.classList.add('btn-outline-primary');
+                    b.textContent = "Select";
+                });
+                
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('active', 'btn-primary');
+                this.textContent = "Selected";
+                
+                selectedBankId = this.dataset.id;
+            });
+        });
+
+        document.querySelectorAll('.match-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!selectedBankId) {
+                    alert("Please select a Bank Transaction from the left column first.");
+                    return;
+                }
+                
+                let sysId = this.dataset.id;
+                // Redirect to match URL
+                window.location.href = `/banking/match/${selectedBankId}/${sysId}/`;
+            });
+        });
+    </script>
+
+    <div class="mt-5">
+        <h4>Reconciled History {% if start_date %}<small class="text-muted">({{ start_date }} to {{ end_date }})</small>{% endif %}</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light"><tr><th>Date</th><th>Bank Desc</th><th>Amount</th><th>Matched To</th><th>Action</th></tr></thead>
+                <tbody>
+                    {% for match in matched_lines %}
+                    <tr>
+                        <td>{{ match.date }}</td>
+                        <td>{{ match.description }}</td>
+                        <td>{{ match.amount }}</td>
+                        <td>{{ match.matched_journal_line.journal_voucher.jv_number }}</td>
+                        <td><a href="{% url 'unmatch_transaction' match.id %}" class="text-danger">Unmatch</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted">No matched transactions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

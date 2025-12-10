@@ -1,0 +1,22 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Upload Bank Statement</h1>
+    <h4 class="text-muted">{{ bank_account.name }}</h4>
+    
+    <div class="alert alert-info mt-3">
+        <strong>CSV Format Required:</strong><br>
+        Your CSV file must have a header row and these columns:<br>
+        <code>Date (YYYY-MM-DD), Description, Amount</code>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Select CSV File</label>
+            <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload & Start Reconciliation</button>
+        <a href="{% url 'bank_account_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+{% endblock %}

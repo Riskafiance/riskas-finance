@@ -1,0 +1,111 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Customers</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-people-fill"></i> Client Management</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-9">
+                <p class="mb-0">
+                    This database tracks the individuals and companies who purchase your goods or services. 
+                    Accurate customer records are the foundation of <strong>Accounts Receivable</strong>.
+                </p>
+                <ul class="small text-muted mt-2 mb-0">
+                    <li><strong>Invoicing:</strong> Generate professional bills instantly using saved customer details.</li>
+                    <li><strong>Revenue Tracking:</strong> See exactly how much revenue each client has generated.</li>
+                    <li><strong>Collections:</strong> Keep phone numbers and emails handy for following up on unpaid invoices.</li>
+                </ul>
+            </div>
+            <div class="col-md-3 border-start text-center d-flex align-items-center justify-content-center">
+                <div class="text-muted">
+                    <i class="bi bi-graph-up-arrow fs-1"></i><br>
+                    <small>Sales & Revenue</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <a href="{% url 'add_customer' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Add New Customer
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <form method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search Name, Email, or Phone..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i></button>
+                {% if search_query %}
+                    <a href="{% url 'customer_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Billing Address</th>
+                        <th>Contact Info</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr class="{% if not customer.is_active %}text-muted fst-italic{% endif %}">
+                        <td>
+                            <a href="{% url 'customer_detail' customer.id %}" class="text-decoration-none fw-bold {% if not customer.is_active %}text-muted{% else %}text-primary{% endif %}">
+                                {{ customer.name }}
+                            </a>
+                            {% if not customer.is_active %}
+                                <span class="badge bg-secondary ms-2">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ customer.address|linebreaksbr|default:"--" }}</small></td>
+                        <td>
+                            {% if customer.email %}
+                                <div><i class="bi bi-envelope"></i> {{ customer.email }}</div>
+                            {% endif %}
+                            {% if customer.phone %}
+                                <div><i class="bi bi-telephone"></i> {{ customer.phone }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'edit_customer' customer.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                
+                                <form action="{% url 'toggle_customer_activity' customer.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    {% if customer.is_active %}
+                                        <button type="submit" class="btn btn-outline-warning btn-sm" title="Deactivate">
+                                            <i class="bi bi-archive"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-outline-success btn-sm" title="Activate">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No customers found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

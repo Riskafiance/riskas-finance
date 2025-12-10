@@ -1,0 +1,152 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Add Fixed Asset</h1>
+    
+    <form method="POST" class="mt-4">
+        {% csrf_token %}
+        
+        <ul class="nav nav-tabs mb-4" id="assetTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">General Information</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button">Financial Details</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="additional-tab" data-bs-toggle="tab" data-bs-target="#additional" type="button">Additional Information</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="assetTabsContent">
+            
+            <div class="tab-pane fade show active" id="general">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Asset Name *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Category *</label>
+                        <input type="text" name="category" class="form-control" placeholder="e.g. Vehicles, Furniture" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Status *</label>
+                        <select name="status" class="form-select">
+                            <option value="Active">Active</option>
+                            <option value="In Repair">In Repair</option>
+                            <option value="Sold">Sold</option>
+                            <option value="Disposed">Disposed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Condition</label>
+                        <select name="condition" class="form-select">
+                            <option value="New">New</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="location" class="form-control" placeholder="e.g. Warehouse A">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Vendor/Supplier</label>
+                        <select name="vendor" class="form-select">
+                            <option value="">-- Select Vendor --</option>
+                            {% for v in vendors %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="financial">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Acquisition Date *</label>
+                        <input type="date" name="acquisition_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Purchase Cost *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" name="purchase_cost" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Salvage Value</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" name="salvage_value" class="form-control" value="0.00">
+                        </div>
+                        <div class="form-text">Estimated value at end of life</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Useful Life (Years) *</label>
+                        <input type="number" name="useful_life_years" class="form-control" required>
+                    </div>
+                </div>
+                
+                <hr>
+                <h5 class="mb-3">Accounting GL Links</h5>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Asset Account</label>
+                        <select name="asset_account" class="form-select">
+                            {% for acc in asset_accounts %}<option value="{{ acc.id }}">{{ acc.account_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Depreciation Expense</label>
+                        <select name="depreciation_expense_account" class="form-select">
+                            {% for acc in expense_accounts %}<option value="{{ acc.id }}">{{ acc.account_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Accumulated Depr.</label>
+                        <select name="accumulated_depreciation_account" class="form-select">
+                            {% for acc in asset_accounts %}<option value="{{ acc.id }}">{{ acc.account_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="additional">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Serial Number</label>
+                        <input type="text" name="serial_number" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Warranty Expiry Date</label>
+                        <input type="date" name="warranty_expiry_date" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+        </div>
+
+        <hr class="mt-4">
+        <div class="d-flex justify-content-end">
+            <a href="{% url 'asset_list' %}" class="btn btn-light me-2">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Save Asset</button>
+        </div>
+    </form>
+{% endblock %}

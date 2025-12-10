@@ -1,0 +1,101 @@
+{% extends 'accounting/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">&laquo; Back to List</a>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary me-2">🖨️ Print</button>
+
+            {% if expense.status == 'Draft' %}
+                <form action="{% url 'change_expense_status' expense.id 'Approved' %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Approve & Post</button>
+                </form>
+                <form action="{% url 'change_expense_status' expense.id 'Declined' %}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to decline this expense?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Decline</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-5">
+            
+            <div class="row mb-5">
+                <div class="col-6">
+                    <img src="{% static 'accounting/images/logo.png' %}" alt="Logo" style="max-width: 150px;" class="mb-3">
+                    <h4 class="fw-bold text-primary">Riska's Finance</h4>
+                    <p class="text-muted mb-0">614 Crawford Ave, Dixon, IL</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h1 class="display-6 fw-bold text-uppercase text-secondary">EXPENSE</h1>
+                    <p class="mb-0">Ref #: <strong>{{ expense.reference_number|default:"N/A" }}</strong></p>
+                    <p class="mb-0">Date: <strong>{{ expense.expense_date }}</strong></p>
+                    <p>Status: 
+                        <span class="badge {% if expense.status == 'Approved' %}bg-success{% elif expense.status == 'Declined' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ expense.status }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <h6 class="text-uppercase text-muted fw-bold">Paid To</h6>
+                    <h4 class="mb-1">{{ expense.vendor.name }}</h4>
+                    <p class="mb-0">{{ expense.vendor.address|linebreaksbr }}</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <h6 class="text-uppercase text-muted fw-bold">Payment Details</h6>
+                    <p class="mb-0">Paid From: <strong>{{ expense.payment_account.account_name }}</strong></p>
+                    <p class="mb-0 text-muted"><em>{{ expense.description }}</em></p>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-striped table-hover border">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 50%;">Description</th>
+                            <th style="width: 30%;">Expense Account</th>
+                            <th class="text-end" style="width: 20%;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in expense.lines.all %}
+                        <tr>
+                            <td>{{ line.description }}</td>
+                            <td class="text-muted small">{{ line.expense_account.account_name }}</td>
+                            <td class="text-end fw-bold">${{ line.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 offset-md-6">
+                    <table class="table table-borderless">
+                        <tr class="border-top border-bottom border-2 border-dark table-light">
+                            <td class="fs-4 fw-bold text-end">Total Paid:</td>
+                            <td class="fs-4 fw-bold text-end text-primary">${{ expense.total_amount|floatformat:2 }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; }
+            .card { box-shadow: none !important; border: none !important; }
+        }
+    </style>
+{% endblock %}

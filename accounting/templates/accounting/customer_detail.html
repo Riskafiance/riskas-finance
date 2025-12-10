@@ -1,0 +1,73 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary mb-3">&laquo; Back to Customers</a>
+
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">{{ customer.name }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-muted">Contact Information</h5>
+                    <p><strong>Email:</strong> {{ customer.email|default:"--" }}</p>
+                    <p><strong>Phone:</strong> {{ customer.phone|default:"--" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-muted">Billing Address</h5>
+                    <p>{{ customer.address|linebreaksbr|default:"--" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-4">Invoices</h3>
+    {% if invoices %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td>{{ invoice.invoice_number }}</td>
+                    <td>{{ invoice.invoice_date }}</td>
+                    <td>{{ invoice.due_date }}</td>
+                    <td>${{ invoice.total_amount|floatformat:2 }}</td>
+                    <td>
+                        <span class="badge {% if invoice.status == 'Paid' %}bg-success{% elif invoice.status == 'Sent' %}bg-info text-dark{% elif invoice.status == 'Void' %}bg-danger{% else %}bg-secondary{% endif %}">
+                            {{ invoice.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'invoice_detail' invoice.id %}" class="btn btn-sm btn-info">View</a>
+                            
+                            {% if invoice.status == 'Sent' or invoice.status == 'Draft' %}
+                                <a href="{% url 'receive_payment' invoice.id %}" class="btn btn-sm btn-success">Pay</a>
+                            {% endif %}
+
+                            {% if invoice.status == 'Paid' %}
+                                <a href="{% url 'refund_invoice' invoice.id %}" class="btn btn-sm btn-outline-danger">Refund</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-light border">
+            No invoices found for this customer.
+        </div>
+    {% endif %}
+
+{% endblock %}

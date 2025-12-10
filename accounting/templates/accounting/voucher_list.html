@@ -1,0 +1,97 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Journal Vouchers</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-journal-richtext"></i> General Ledger Adjustments</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-2">
+                    Journal Vouchers (JVs) are the raw entries into your accounting books. 
+                    While Invoices and Bills create entries automatically, you use Manual JVs for:
+                </p>
+                <ul class="small text-muted mb-0">
+                    <li><strong>Corrections:</strong> Fixing errors in previous transactions.</li>
+                    <li><strong>Non-Cash Items:</strong> Recording Depreciation or Amortization.</li>
+                    <li><strong>Adjustments:</strong> End-of-month accruals or deferrals.</li>
+                    <li><strong>Opening Balances:</strong> Setting up initial account values.</li>
+                </ul>
+            </div>
+            <div class="col-md-4 border-start">
+                <p class="small mb-1"><strong><i class="bi bi-exclamation-triangle"></i> The Golden Rule:</strong></p>
+                <p class="small text-muted fst-italic">
+                    Total Debits must always equal Total Credits. The system will not let you post an unbalanced entry.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-7">
+            <div class="btn-group" role="group">
+                <a href="{% url 'create_voucher' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> New Entry
+                </a>
+                <a href="{% url 'upload_voucher' %}" class="btn btn-success">
+                    <i class="bi bi-upload"></i> Upload CSV
+                </a>
+                <a href="{% url 'download_all_vouchers' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-download"></i> Export All
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-5">
+            <form method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search Number or Description..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i></button>
+                {% if search_query %}
+                    <a href="{% url 'voucher_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>JV Number</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voucher in vouchers %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ voucher.jv_number }}</td>
+                        <td>{{ voucher.jv_date }}</td>
+                        <td>{{ voucher.description|truncatechars:50 }}</td>
+                        <td>
+                            <span class="badge {% if voucher.status == 'Posted' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                {{ voucher.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'voucher_detail' voucher.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No journal entries found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

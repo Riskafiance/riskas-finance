@@ -1,0 +1,28 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Edit Customer</h1>
+    <form action="{% url 'edit_customer' customer.id %}" method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Customer Name</label>
+            <input type="text" name="name" class="form-control" value="{{ customer.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <textarea name="address" class="form-control" rows="3">{{ customer.address }}</textarea>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ customer.email }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" class="form-control" value="{{ customer.phone }}">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Update Customer</button>
+        <a href="{% url 'customer_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+{% endblock %}

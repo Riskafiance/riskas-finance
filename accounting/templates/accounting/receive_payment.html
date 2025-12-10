@@ -1,0 +1,25 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Receive Payment</h1>
+    <h3>Invoice: {{ invoice.invoice_number }}</h3>
+    <p>Total Amount: <strong>${{ invoice.total_amount|floatformat:2 }}</strong></p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Payment Date</label>
+            <input type="date" name="payment_date" class="form-control" required value="{% now 'Y-m-d' %}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Deposit To (Bank Account)</label>
+            <select name="deposit_account" class="form-select" required>
+                {% for acc in deposit_accounts %}
+                    <option value="{{ acc.id }}">{{ acc.account_number }} - {{ acc.account_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">Record Payment</button>
+        <a href="{% url 'customer_detail' invoice.customer.id %}" class="btn btn-light">Cancel</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'accounting/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="{% url 'po_list' %}" class="btn btn-outline-secondary">&laquo; Back to List</a>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary me-2">
+                <i class="bi bi-printer"></i> Print PO
+            </button>
+
+            {% if order.status == 'Draft' %}
+                <form action="{% url 'change_po_status' order.id 'Issued' %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Issue PO</button>
+                </form>
+                <form action="{% url 'change_po_status' order.id 'Cancelled' %}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this PO?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Cancel</button>
+                </form>
+            {% endif %}
+
+            {% if order.status == 'Issued' or order.status == 'Received' %}
+                <form action="{% url 'change_po_status' order.id 'Closed' %}" method="POST" class="d-inline" onsubmit="return confirm('Close this PO?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark">Close PO</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-5">
+            
+            <div class="row mb-5">
+                <div class="col-6">
+                    <img src="{% static 'accounting/images/logo.png' %}" alt="Logo" style="max-width: 150px;" class="mb-3">
+                    <h4 class="fw-bold text-primary">Riska's Finance</h4>
+                    <p class="text-muted mb-0">614 Crawford Ave</p>
+                    <p class="text-muted mb-0">Dixon, IL</p>
+                    <p class="text-muted">riskas.finances@gmail.com</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h1 class="display-6 fw-bold text-secondary text-uppercase">Purchase Order</h1>
+                    <h3 class="text-dark mb-1">{{ order.po_number }}</h3>
+                    <p class="mb-0">Date: <strong>{{ order.po_date }}</strong></p>
+                    <p>Status: 
+                        <span class="badge {% if order.status == 'Issued' %}bg-info text-dark{% elif order.status == 'Draft' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <h6 class="text-uppercase text-muted fw-bold small">Vendor</h6>
+                    <h4 class="mb-1">{{ order.vendor_name }}</h4>
+                    
+                    {% if order.vendor_address %}
+                        <p class="mb-1">{{ order.vendor_address|linebreaksbr }}</p>
+                    {% elif order.vendor.address %}
+                         <p class="mb-1">{{ order.vendor.address|linebreaksbr }}</p>
+                    {% endif %}
+
+                    {% if order.vendor.email %}
+                        <div><i class="bi bi-envelope me-1"></i> {{ order.vendor.email }}</div>
+                    {% endif %}
+                    {% if order.vendor.phone %}
+                        <div><i class="bi bi-telephone me-1"></i> {{ order.vendor.phone }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 text-end">
+                    <h6 class="text-uppercase text-muted fw-bold small">Ship To</h6>
+                    <p class="mb-0 fw-bold">Riska's Finance</p>
+                    <p class="mb-0">614 Crawford Ave</p>
+                    <p class="mb-0">Dixon, IL</p>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-striped border">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 40%;">Item / Description</th>
+                            <th style="width: 25%;">Account Code</th>
+                            <th class="text-center" style="width: 10%;">Qty</th>
+                            <th class="text-end" style="width: 15%;">Unit Price</th>
+                            <th class="text-end" style="width: 10%;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in order.lines.all %}
+                        <tr>
+                            <td class="fw-bold">{{ line.item_description }}</td>
+                            <td class="text-muted small">{{ line.account.account_number }} - {{ line.account.account_name }}</td>
+                            <td class="text-center">{{ line.quantity }}</td>
+                            <td class="text-end">${{ line.unit_price|floatformat:2 }}</td>
+                            <td class="text-end fw-bold">${{ line.line_total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-md-7">
+                    <p class="text-muted small">
+                        <strong>Terms & Conditions:</strong><br>
+                        Payment due upon receipt of invoice. Please include PO number on all correspondence.
+                    </p>
+                    <p class="text-muted small">
+                        <strong>Notes:</strong><br>
+                        {{ order.description|default:"--" }}
+                    </p>
+                </div>
+                <div class="col-md-5">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr class="border-top border-bottom border-2 border-dark table-light">
+                                <td class="fs-4 fw-bold text-end">Grand Total:</td>
+                                <td class="fs-4 fw-bold text-end text-primary">${{ order.total_amount|floatformat:2 }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; }
+            .card { box-shadow: none !important; border: none !important; }
+        }
+    </style>
+{% endblock %}

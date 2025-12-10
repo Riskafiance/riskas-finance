@@ -1,0 +1,65 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Dispose Asset</h1>
+    <h4 class="text-muted">{{ asset.name }} ({{ asset.asset_number }})</h4>
+
+    <div class="alert alert-warning mt-3">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        This action will remove the asset's value from your Balance Sheet and post any Gain/Loss to your Income Statement.
+    </div>
+    
+    <form method="POST" class="card p-4 shadow-sm mt-3">
+        {% csrf_token %}
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Disposal Date</label>
+                <input type="date" name="disposal_date" class="form-control" required value="{% now 'Y-m-d' %}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Disposal Type</label>
+                <select name="disposal_type" class="form-select" id="disposalType">
+                    <option value="Sold">Sold</option>
+                    <option value="Scrapped">Scrapped / Donated</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Sale Price (If Sold)</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" step="0.01" name="sale_price" id="salePrice" class="form-control" value="0.00">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Deposit To (Bank Account)</label>
+                <select name="deposit_account" id="depositAccount" class="form-select">
+                    <option value="">-- Select Bank --</option>
+                    {% for acc in bank_accounts %}
+                        <option value="{{ acc.id }}">{{ acc.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Gain/Loss Account</label>
+            <select name="gl_account" class="form-select" required>
+                <option value="" disabled selected>-- Select Revenue or Expense Account --</option>
+                {% for acc in income_expense_accounts %}
+                    <option value="{{ acc.id }}">{{ acc.account_number }} - {{ acc.account_name }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Select an account to record the profit or loss from this disposal (e.g., "Gain on Sale of Assets" or "Loss on Disposal").</div>
+        </div>
+
+        <hr>
+        <div class="d-flex justify-content-end">
+            <a href="{% url 'asset_list' %}" class="btn btn-light me-2">Cancel</a>
+            <button type="submit" class="btn btn-danger px-4">Process Disposal</button>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Expenses</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-wallet2"></i> Cash Outflow</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-0">
+                    This module tracks direct payments made from your bank accounts or credit cards. 
+                    Unlike Purchase Orders (which are promises to pay), Expenses represent money that has already left your business.
+                </p>
+                <p class="small text-muted mt-2 mb-0">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i> <strong>Automation:</strong> 
+                    Saving an expense automatically creates a Journal Entry that credits your Bank/Cash account and debits the selected Expense account.
+                </p>
+            </div>
+            <div class="col-md-4 border-start">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-receipt fs-1 text-muted me-3"></i>
+                    <div>
+                        <small class="fw-bold text-uppercase text-muted">Record Keeping</small><br>
+                        <small>Always add a Reference # (Invoice or Receipt ID) for easier auditing later.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <a href="{% url 'create_expense' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Record New Expense
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <form method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search Vendor, Ref #, or Desc..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i></button>
+                {% if search_query %}
+                    <a href="{% url 'expense_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Ref #</th>
+                        <th>Paid From</th>
+                        <th>Description</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr>
+                        <td>{{ exp.expense_date }}</td>
+                        <td>
+                            <a href="{% url 'vendor_detail' exp.vendor.id %}" class="text-decoration-none fw-bold text-dark">
+                                {{ exp.vendor.name }}
+                            </a>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ exp.reference_number|default:"--" }}</span></td>
+                        <td><small>{{ exp.payment_account.account_name }}</small></td>
+                        <td>{{ exp.description|truncatechars:30 }}</td>
+                        <td class="fw-bold text-danger">-${{ exp.total_amount|floatformat:2 }}</td>
+                        
+                        <td>
+                            <span class="badge {% if exp.status == 'Approved' %}bg-success{% elif exp.status == 'Declined' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                {{ exp.status }}
+                            </span>
+                        </td>
+                        
+                        <td class="text-end">
+                            <a href="{% url 'expense_detail' exp.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No expenses found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

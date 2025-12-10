@@ -1,0 +1,27 @@
+{% extends 'accounting/base.html' %}
+{% block content %}
+    <h1>Add New Vendor</h1>
+    <form action="{% url 'add_vendor' %}" method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Vendor Name</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <textarea name="address" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" class="form-control">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Save Vendor</button>
+        <a href="{% url 'vendor_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+{% endblock %}

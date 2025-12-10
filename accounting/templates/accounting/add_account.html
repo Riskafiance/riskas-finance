@@ -1,0 +1,42 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Add New Account</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" class="card p-4 shadow-sm mt-3">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label class="form-label">Account Type</label>
+            <select name="account_type" class="form-select" required>
+                <option value="" disabled selected>-- Select Type --</option>
+                {% for type_code, type_name in account_types %}
+                    <option value="{{ type_code }}">{{ type_name }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">The system will automatically set the correct Debit/Credit balance based on your selection.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Account Number</label>
+            <input type="text" name="account_number" class="form-control" placeholder="e.g. 1001" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Account Name</label>
+            <input type="text" name="account_name" class="form-control" placeholder="e.g. Checking Account" required>
+        </div>
+        
+        <hr>
+        <div class="d-flex justify-content-end">
+            <a href="{% url 'account_list' %}" class="btn btn-light me-2">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Save Account</button>
+        </div>
+    </form>
+{% endblock %}

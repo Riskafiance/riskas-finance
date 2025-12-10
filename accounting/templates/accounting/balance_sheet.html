@@ -1,0 +1,148 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div class="d-flex align-items-center">
+            <select class="form-select form-select-sm me-2" style="width: 150px;">
+                <option>Compact | 100%</option>
+            </select>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+            </button>
+            <button class="btn btn-outline-success btn-sm ms-2">
+                <i class="bi bi-file-earmark-excel"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <div class="card bg-light mb-4 no-print shadow-sm">
+        <div class="card-body py-2">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label class="small fw-bold text-muted me-2">As of:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="date" name="as_of_date" class="form-control form-control-sm" value="{{ as_of_date }}">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary btn-sm">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-5">
+            
+            <div class="text-center mb-5">
+                <h3 class="fw-bold text-dark mb-0">Balance Sheet</h3>
+                <h5 class="text-secondary mt-1">Riska's Finance</h5>
+                <p class="text-muted small mb-0">As of {{ as_of_date|date:"F j, Y" }}</p>
+            </div>
+
+            <table class="table table-hover table-borderless report-table">
+                <thead class="border-bottom border-dark">
+                    <tr>
+                        <th class="text-start fw-bold">Account</th>
+                        <th class="text-end fw-bold">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr class="bg-light fw-bold"><td colspan="2"><i class="bi bi-chevron-down me-2"></i>Assets</td></tr>
+                    
+                    <tr><td class="ps-4 fw-bold"><i class="bi bi-chevron-down me-2"></i>Current Assets</td><td></td></tr>
+                    
+                    <tr><td class="ps-5 fw-bold"><i class="bi bi-chevron-down me-2"></i>Bank Accounts</td><td></td></tr>
+                    {% for item in assets %}
+                        {% if "Bank" in item.name or "Cash" in item.name %}
+                        <tr>
+                            <td class="ps-5 ms-4 text-muted">{{ item.name }}</td>
+                            <td class="text-end">{{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    <tr class="border-top"><td class="ps-5 fw-bold">Total for Bank Accounts</td><td class="text-end fw-bold">$ --</td></tr>
+
+                    {% for item in assets %}
+                        {% if "Bank" not in item.name and "Cash" not in item.name and "Fixed" not in item.name %}
+                        <tr>
+                            <td class="ps-5 text-muted">{{ item.name }}</td>
+                            <td class="text-end">{{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <tr class="border-top"><td class="ps-4 fw-bold">Total Current Assets</td><td class="text-end fw-bold">$ --</td></tr>
+
+                    <tr><td class="ps-4 fw-bold"><i class="bi bi-chevron-down me-2"></i>Fixed Assets</td><td></td></tr>
+                    {% for item in assets %}
+                        {% if "Fixed" in item.name or "Asset" in item.name %}
+                        <tr>
+                            <td class="ps-5 text-muted">{{ item.name }}</td>
+                            <td class="text-end">{{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <tr class="border-top border-dark bg-light">
+                        <td class="fw-bold">Total Assets</td>
+                        <td class="text-end fw-bold">${{ total_assets|floatformat:2 }}</td>
+                    </tr>
+
+                    <tr><td colspan="2" class="py-3"></td></tr>
+
+                    <tr class="bg-light fw-bold"><td colspan="2"><i class="bi bi-chevron-down me-2"></i>Liabilities and Equity</td></tr>
+
+                    <tr><td class="ps-4 fw-bold"><i class="bi bi-chevron-down me-2"></i>Liabilities</td><td></td></tr>
+                    {% for item in liabilities %}
+                    <tr>
+                        <td class="ps-5 text-muted">{{ item.name }}</td>
+                        <td class="text-end">{{ item.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="border-top"><td class="ps-4 fw-bold">Total Liabilities</td><td class="text-end fw-bold">${{ total_liabilities|floatformat:2 }}</td></tr>
+
+                    <tr><td class="ps-4 fw-bold"><i class="bi bi-chevron-down me-2"></i>Equity</td><td></td></tr>
+                    {% for item in equity %}
+                    <tr>
+                        <td class="ps-5 text-muted">{{ item.name }}</td>
+                        <td class="text-end">{{ item.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td class="ps-5 text-muted fst-italic">Net Income (YTD)</td>
+                        <td class="text-end">{{ net_income_equity|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="border-top"><td class="ps-4 fw-bold">Total Equity</td><td class="text-end fw-bold">${{ total_equity|add:net_income_equity|floatformat:2 }}</td></tr>
+
+                    <tfoot class="border-top border-3 border-dark">
+                        <tr class="bg-light">
+                            <td class="fw-bold pt-3">Total Liabilities & Equity</td>
+                            <td class="text-end fw-bold pt-3">${{ total_equity_and_liabilities|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <style>
+        /* Professional Report Styling */
+        .report-table td, .report-table th {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .report-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; }
+            .card { box-shadow: none !important; border: none !important; }
+        }
+    </style>
+{% endblock %}

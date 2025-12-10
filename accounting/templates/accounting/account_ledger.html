@@ -1,0 +1,97 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{% url 'account_list' %}" class="text-decoration-none">&laquo; Back to Chart of Accounts</a>
+            <h1 class="mt-2">{{ account.account_number }} - {{ account.account_name }}</h1>
+        </div>
+        <div class="text-end">
+            <h5 class="text-muted mb-0">Account Ledger</h5>
+            <span class="badge bg-secondary">{{ account.account_type }} / {{ account.normal_balance }}</span>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Start Date</label>
+                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">End Date</label>
+                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">Search</label>
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="JV # or Description..." value="{{ search_query }}">
+                </div>
+
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary btn-sm px-3">
+                        <i class="bi bi-filter"></i> Filter
+                    </button>
+                    {% if search_query or start_date %}
+                        <a href="{% url 'account_ledger' account.id %}" class="btn btn-outline-danger btn-sm ms-1">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <table class="table table-striped table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>JV Number</th>
+                <th>Description</th>
+                <th class="text-end">Debit</th>
+                <th class="text-end">Credit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in transaction_lines %}
+            <tr>
+                <td>{{ line.journal_voucher.jv_date }}</td>
+                <td>
+                    <a href="{% url 'voucher_detail' line.journal_voucher.id %}" class="text-decoration-none fw-bold">
+                        {{ line.journal_voucher.jv_number }}
+                    </a>
+                </td>
+                <td>
+                    <span class="fw-bold">{{ line.journal_voucher.description }}</span>
+                    {% if line.line_description %}
+                        <br><small class="text-muted">- {{ line.line_description }}</small>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if line.debit_amount > 0 %}
+                        ${{ line.debit_amount|floatformat:2 }}
+                    {% else %}-{% endif %}
+                </td>
+                <td class="text-end">
+                    {% if line.credit_amount > 0 %}
+                        ${{ line.credit_amount|floatformat:2 }}
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center py-4 text-muted">
+                    No transactions found matching your criteria.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-secondary fw-bold border-top border-2 border-dark">
+                <td colspan="3" class="text-end">Net Change (Selected Period):</td>
+                <td colspan="2" class="text-center fs-5 text-primary">
+                    ${{ calculated_balance|floatformat:2 }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+{% endblock %}

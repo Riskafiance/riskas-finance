@@ -1,0 +1,1 @@
+web: gunicorn riska_finance.wsgi

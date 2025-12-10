@@ -1,0 +1,19 @@
+{% extends 'accounting/base.html' %}
+{% block content %}
+    <h1>A/P Aging Summary (Issued POs)</h1>
+    <div class="card p-3 shadow-sm mt-3">
+        <table class="table table-striped">
+            <thead class="table-dark"><tr><th>Vendor</th><th>PO #</th><th>Est. Due Date</th><th>Bucket</th><th class="text-end">Amount</th></tr></thead>
+            <tbody>
+                {% for item in aging_data %}
+                <tr>
+                    <td>{{ item.vendor }}</td><td>{{ item.po }}</td><td>{{ item.due_date }}</td>
+                    <td><span class="badge bg-secondary">{{ item.bucket }}</span></td>
+                    <td class="text-end fw-bold">${{ item.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="table-secondary fw-bold"><td colspan="4" class="text-end">Total Committed:</td><td class="text-end">${{ total_ap|floatformat:2 }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

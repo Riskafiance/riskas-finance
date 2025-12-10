@@ -1,0 +1,114 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Create Purchase Order</h1>
+    <form action="{% url 'create_po' %}" method="POST">
+        {% csrf_token %}
+        
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label">Date</label>
+                <input type="date" name="po_date" class="form-control" required>
+            </div>
+            
+            <div class="col-md-5">
+                <label class="form-label">Select Vendor</label>
+                <select name="vendor" class="form-select" required>
+                    <option value="" disabled selected>-- Choose a Vendor --</option>
+                    {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    <a href="{% url 'add_vendor' %}" target="_blank">Create a new vendor</a>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Description/Reference</label>
+                <textarea name="description" class="form-control" rows="1"></textarea>
+            </div>
+        </div>
+        
+        <table class="table" id="po-lines-table">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 25%;">Item Description</th>
+                    <th style="width: 25%;">Expense Account</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 15%;">Unit Price</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="po-lines-body">
+                <tr>
+                    <td><input type="text" name="item_description" class="form-control" required></td>
+                    <td>
+                        <select name="account" class="form-select" required>
+                            {% for acc in accounts %}
+                            <option value="{{ acc.id }}">{{ acc.account_number }} - {{ acc.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" step="0.01" name="quantity" class="form-control qty" oninput="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" name="unit_price" class="form-control price" oninput="calculateRow(this)"></td>
+                    <td><input type="text" class="form-control row-total" readonly></td>
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="4" class="text-end">Grand Total:</td>
+                    <td id="grand-total">$0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <button type="button" class="btn btn-secondary" onclick="addRow()">Add Item</button>
+        <hr>
+        <button type="submit" class="btn btn-success">Save Purchase Order</button>
+        <a href="{% url 'po_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+
+    <script>
+        function addRow() {
+            const tbody = document.getElementById("po-lines-body");
+            const newRow = tbody.firstElementChild.cloneNode(true);
+            
+            // Clear values in the new row
+            newRow.querySelectorAll("input").forEach(input => input.value = "");
+            newRow.querySelector("select").selectedIndex = 0;
+            
+            tbody.appendChild(newRow);
+        }
+
+        function removeRow(btn) {
+            if (document.querySelectorAll("#po-lines-body tr").length > 1) {
+                btn.closest("tr").remove();
+                calculateGrandTotal();
+            } else {
+                alert("You must have at least one line item.");
+            }
+        }
+
+        function calculateRow(input) {
+            const row = input.closest("tr");
+            const qty = parseFloat(row.querySelector(".qty").value) || 0;
+            const price = parseFloat(row.querySelector(".price").value) || 0;
+            const total = qty * price;
+            
+            row.querySelector(".row-total").value = total.toFixed(2);
+            calculateGrandTotal();
+        }
+
+        function calculateGrandTotal() {
+            let total = 0;
+            document.querySelectorAll(".row-total").forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById("grand-total").textContent = "$" + total.toFixed(2);
+        }
+    </script>
+{% endblock %}

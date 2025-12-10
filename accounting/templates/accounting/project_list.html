@@ -1,0 +1,102 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Projects</h1>
+        <div>
+            <a href="{% url 'project_profitability_report' %}" class="btn btn-outline-success me-2">
+                <i class="bi bi-bar-chart-line"></i> Profitability Report
+            </a>
+            <a href="{% url 'add_project' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> New Project
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-kanban"></i> Job Costing</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-9">
+                <p class="mb-0">
+                    Projects allow you to track revenue and expenses for specific jobs to calculate profitability per project.
+                    Link Invoices (Income) and Expenses (Cost) to a project to see your real margin.
+                </p>
+            </div>
+            <div class="col-md-3 border-start text-center d-flex align-items-center justify-content-center">
+                <div class="text-muted">
+                    <i class="bi bi-briefcase fs-1"></i><br>
+                    <small class="fw-bold">Profitability</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-dark text-white p-3 mb-4">
+        <form method="GET" class="d-flex">
+            <input type="text" name="search" class="form-control bg-dark text-white border-secondary me-2" placeholder="Search Project Name, Code, or Customer..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+            {% if search_query %}
+                <a href="{% url 'project_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Code</th>
+                        <th>Project Name</th>
+                        <th>Customer</th>
+                        <th>Start Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in projects %}
+                    <tr>
+                        <td class="fw-bold text-primary">
+                            <a href="{% url 'project_detail' p.id %}" class="text-decoration-none">{{ p.code }}</a>
+                        </td>
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.customer.name|default:"Internal / None" }}</td>
+                        <td>{{ p.start_date }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if p.status == 'Completed' %}bg-success
+                                {% elif p.status == 'In Progress' %}bg-primary
+                                {% elif p.status == 'Cancelled' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'project_detail' p.id %}" class="btn btn-sm btn-outline-primary" title="View Dashboard">
+                                    <i class="bi bi-speedometer2"></i> View
+                                </a>
+                                <form action="{% url 'delete_project' p.id %}" method="POST" class="d-inline" onsubmit="return confirm('Delete this project? Transactions will remain but become unlinked.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
+                            No projects found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

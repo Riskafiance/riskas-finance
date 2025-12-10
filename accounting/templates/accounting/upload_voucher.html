@@ -1,0 +1,37 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Upload Journal Voucher from CSV</h1>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">CSV File Format</h5>
+            <p class="card-text">
+                Your CSV file must have a header row and four columns in this exact order:
+                <code>AccountNumber, Debit, Credit, Description</code>
+            </p>
+            <p><strong>Example:</strong></p>
+            <pre class="bg-light p-2 rounded">AccountNumber,Debit,Credit,Description
+10100,500.00,0,Office Supplies
+60200,75.50,0,Bank Fees
+20100,0,575.50,Payment from Checking</pre>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="csv_file" class="form-label">Select CSV File to Upload</label>
+            <input class="form-control" type="file" name="csv_file" id="csv_file" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-success">Upload and Create Voucher</button>
+        <a href="{% url 'voucher_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+{% endblock %}

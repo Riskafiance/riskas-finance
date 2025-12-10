@@ -1,0 +1,52 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <a href="{% url 'voucher_list' %}">&laquo; Back to Voucher List</a>
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <h1>Voucher: {{ voucher.jv_number }}</h1>
+        <div>
+            <a href="{% url 'download_single_voucher' voucher.id %}" class="btn btn-secondary">Download</a>
+
+            {% if voucher.status == 'Draft' %}
+                <a href="{% url 'edit_voucher' voucher.id %}" class="btn btn-warning">Edit</a>
+
+                <form action="{% url 'post_voucher' voucher.id %}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to post this journal voucher? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Post Journal</button>
+                </form>
+            {% else %}
+                <span class="badge bg-success fs-5">POSTED on {{ voucher.posted_at|date:"Y-m-d" }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <p><strong>Date:</strong> {{ voucher.jv_date }}</p>
+    <p><strong>Description:</strong> {{ voucher.description }}</p>
+    
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Account</th>
+                <th>Account Name</th>
+                <th>Debit</th>
+                <th>Credit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in voucher.lines.all %}
+            <tr>
+                <td>{{ line.account.account_number }}</td>
+                <td>{{ line.account.account_name }}</td>
+                <td>${{ line.debit_amount|floatformat:2 }}</td>
+                <td>${{ line.credit_amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td colspan="2" class="text-end">Totals:</td>
+                <td>${{ total_debits|floatformat:2 }}</td>
+                <td>${{ total_credits|floatformat:2 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+{% endblock %}

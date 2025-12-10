@@ -1,0 +1,111 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Create Journal Voucher</h1>
+    <form action="{% url 'create_voucher' %}" method="POST">
+        {% csrf_token %}
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label">JV Date</label>
+                <input type="date" name="jv_date" class="form-control" required>
+            </div>
+            <div class="col-md-9">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+        </div>
+        
+        <table class="table" id="jv-lines-table">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 35%;">Account</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Description</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="jv-lines-body"> <tr>
+                    <td>
+                        <select name="account" class="form-select" required>
+                            <option value="" disabled selected>Select an account</option>
+                            {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.account_number }} - {{ acc.account_name }}</option>{% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" step="0.01" name="debit" class="form-control" value="0.00"></td>
+                    <td><input type="number" step="0.01" name="credit" class="form-control" value="0.00"></td>
+                    <td><input type="text" name="line_description" class="form-control"></td>
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+                </tr>
+            </tbody>
+            <tfoot class="table-group-divider">
+                <tr class="fw-bold">
+                    <td class="text-end">Totals:</td>
+                    <td id="total-debits">$0.00</td>
+                    <td id="total-credits">$0.00</td>
+                    <td colspan="2" id="balance-warning" class="text-danger"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <button type="button" class="btn btn-secondary" onclick="addRow()">Add Line</button>
+        <hr>
+        <button type="submit" class="btn btn-success">Save Voucher</button>
+        <a href="{% url 'voucher_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+
+    <script>
+        const tableBody = document.getElementById("jv-lines-body");
+
+        function addRow() {
+            const firstRow = tableBody.querySelector("tr");
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelectorAll("input").forEach(input => input.value = input.type === 'text' ? '' : '0.00');
+            newRow.querySelector("select").selectedIndex = 0;
+            tableBody.appendChild(newRow);
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll("#jv-lines-table tbody tr").length > 1) {
+                button.closest("tr").remove();
+                updateTotals(); // Update totals after removing a row
+            } else {
+                alert("You must have at least one line.");
+            }
+        }
+
+        function updateTotals() {
+            let totalDebits = 0;
+            let totalCredits = 0;
+            const debitInputs = document.querySelectorAll('input[name="debit"]');
+            const creditInputs = document.querySelectorAll('input[name="credit"]');
+
+            debitInputs.forEach(input => {
+                totalDebits += parseFloat(input.value) || 0;
+            });
+
+            creditInputs.forEach(input => {
+                totalCredits += parseFloat(input.value) || 0;
+            });
+
+            document.getElementById('total-debits').textContent = `$${totalDebits.toFixed(2)}`;
+            document.getElementById('total-credits').textContent = `$${totalCredits.toFixed(2)}`;
+
+            const warningCell = document.getElementById('balance-warning');
+            if (totalDebits !== totalCredits) {
+                warningCell.textContent = "Out of balance!";
+            } else {
+                warningCell.textContent = "";
+            }
+        }
+
+        // Listen for changes on any input within the table body
+        tableBody.addEventListener('input', function(event) {
+            if (event.target.matches('input[name="debit"]') || event.target.matches('input[name="credit"]')) {
+                updateTotals();
+            }
+        });
+
+        // Calculate totals on page load
+        updateTotals();
+    </script>
+{% endblock %}

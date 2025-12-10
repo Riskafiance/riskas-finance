@@ -1,0 +1,104 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Edit Journal Voucher</h1>
+    <form action="{% url 'edit_voucher' voucher.id %}" method="POST">
+        {% csrf_token %}
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label">JV Date</label>
+                <input type="date" name="jv_date" class="form-control" value="{{ voucher.jv_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-9">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" value="{{ voucher.description }}" required>
+            </div>
+        </div>
+        
+        <table class="table" id="jv-lines-table">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 35%;">Account</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Description</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="jv-lines-body">
+                {% for line in voucher.lines.all %}
+                <tr>
+                    <td>
+                        <select name="account" class="form-select" required>
+                            {% for acc in accounts %}
+                            <option value="{{ acc.id }}" {% if line.account.id == acc.id %}selected{% endif %}>
+                                {{ acc.account_number }} - {{ acc.account_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" step="0.01" name="debit" class="form-control" value="{{ line.debit_amount|stringformat:'.2f' }}"></td>
+                    <td><input type="number" step="0.01" name="credit" class="form-control" value="{{ line.credit_amount|stringformat:'.2f' }}"></td>
+                    <td><input type="text" name="line_description" class="form-control" value="{{ line.line_description }}"></td>
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-group-divider">
+                <tr class="fw-bold">
+                    <td class="text-end">Totals:</td>
+                    <td id="total-debits">$0.00</td>
+                    <td id="total-credits">$0.00</td>
+                    <td colspan="2" id="balance-warning" class="text-danger"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <button type="button" class="btn btn-secondary" onclick="addRow()">Add Line</button>
+        <hr>
+        <button type="submit" class="btn btn-success">Update Voucher</button>
+        <a href="{% url 'voucher_detail' voucher.id %}" class="btn btn-light">Cancel</a>
+    </form>
+
+    <script>
+        // (The same JavaScript from create_voucher.html)
+        const tableBody = document.getElementById("jv-lines-body");
+
+        function addRow() {
+            const firstRow = tableBody.querySelector("tr");
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelectorAll("input").forEach(input => input.value = input.type === 'text' ? '' : '0.00');
+            newRow.querySelector("select").selectedIndex = 0;
+            tableBody.appendChild(newRow);
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll("#jv-lines-table tbody tr").length > 1) {
+                button.closest("tr").remove();
+                updateTotals();
+            } else {
+                alert("You must have at least one line.");
+            }
+        }
+
+        function updateTotals() {
+            let totalDebits = 0;
+            let totalCredits = 0;
+            document.querySelectorAll('input[name="debit"]').forEach(input => {
+                totalDebits += parseFloat(input.value) || 0;
+            });
+            document.querySelectorAll('input[name="credit"]').forEach(input => {
+                totalCredits += parseFloat(input.value) || 0;
+            });
+            document.getElementById('total-debits').textContent = `$${totalDebits.toFixed(2)}`;
+            document.getElementById('total-credits').textContent = `$${totalCredits.toFixed(2)}`;
+            const warningCell = document.getElementById('balance-warning');
+            if (totalDebits.toFixed(2) !== totalCredits.toFixed(2)) {
+                warningCell.textContent = "Out of balance!";
+            } else {
+                warningCell.textContent = "";
+            }
+        }
+        tableBody.addEventListener('input', updateTotals);
+        document.addEventListener('DOMContentLoaded', updateTotals);
+    </script>
+{% endblock %}

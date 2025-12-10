@@ -1,0 +1,124 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-6 mb-0">{{ project.name }}</h1>
+            <div class="mt-2">
+                <span class="badge bg-secondary">{{ project.code }}</span>
+                <span class="badge {% if project.status == 'Completed' %}bg-success{% elif project.status == 'In Progress' %}bg-primary{% elif project.status == 'Cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                    {{ project.status }}
+                </span>
+            </div>
+        </div>
+        
+        <div>
+            <a href="{% url 'project_list' %}" class="btn btn-outline-secondary me-2">Back to List</a>
+            
+            <div class="btn-group">
+                <button type="button" class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Manage Project
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Change Status</h6></li>
+                    <li>
+                        <form action="{% url 'change_project_status' project.id 'Not Started' %}" method="POST">
+                            {% csrf_token %}<button class="dropdown-item">Not Started</button>
+                        </form>
+                    </li>
+                    <li>
+                        <form action="{% url 'change_project_status' project.id 'In Progress' %}" method="POST">
+                            {% csrf_token %}<button class="dropdown-item">In Progress</button>
+                        </form>
+                    </li>
+                    <li>
+                        <form action="{% url 'change_project_status' project.id 'On Hold' %}" method="POST">
+                            {% csrf_token %}<button class="dropdown-item">On Hold</button>
+                        </form>
+                    </li>
+                    <li>
+                        <form action="{% url 'change_project_status' project.id 'Completed' %}" method="POST">
+                            {% csrf_token %}<button class="dropdown-item text-success">Completed</button>
+                        </form>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form action="{% url 'delete_project' project.id %}" method="POST" onsubmit="return confirm('Delete this project? All linked invoices and expenses will remain but will be unlinked.');">
+                            {% csrf_token %}
+                            <button class="dropdown-item text-danger"><i class="bi bi-trash"></i> Delete Project</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-success text-success h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Revenue</h6>
+                    <h2 class="mb-0">${{ total_revenue|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger text-danger h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Costs</h6>
+                    <h2 class="mb-0">-${{ total_cost|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50 text-uppercase small fw-bold">Net Profit</h6>
+                    <h2 class="mb-0 {% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ profit|floatformat:2 }}
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold bg-white border-bottom">Invoices (Income)</div>
+                <table class="table table-sm mb-0 table-hover">
+                    <tbody>
+                        {% for inv in invoices %}
+                        <tr>
+                            <td><a href="{% url 'invoice_detail' inv.id %}" class="text-decoration-none fw-bold">{{ inv.invoice_number }}</a></td>
+                            <td>{{ inv.invoice_date }}</td>
+                            <td class="text-end text-success">${{ inv.total_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center p-3">No invoices linked.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold bg-white border-bottom">Expenses (Costs)</div>
+                <table class="table table-sm mb-0 table-hover">
+                    <tbody>
+                        {% for exp in expenses %}
+                        <tr>
+                            <td><a href="{% url 'expense_detail' exp.id %}" class="text-decoration-none fw-bold">{{ exp.vendor.name }}</a></td>
+                            <td>{{ exp.expense_date }}</td>
+                            <td class="text-end text-danger">-${{ exp.total_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center p-3">No expenses linked.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

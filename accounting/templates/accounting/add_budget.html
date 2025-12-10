@@ -1,0 +1,68 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Create New Budget</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-compass"></i> Financial Planning</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-0">
+                    A **Budget** is your financial roadmap for the year. It defines your targets for Revenue (how much you hope to earn) and Expenses (spending limits).
+                </p>
+                <p class="small text-muted mt-2 mb-0">
+                    <i class="bi bi-graph-up-arrow text-success"></i> <strong>Why create one?</strong> 
+                    Once created, you can compare your **Actuals** (Real Money) against this **Budget** (Planned Money) to see if you are over-spending or hitting your sales goals.
+                </p>
+            </div>
+            <div class="col-md-4 border-start">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calculator fs-1 text-muted me-3"></i>
+                    <div>
+                        <small class="fw-bold text-uppercase text-muted">Variance Analysis</small><br>
+                        <small>Variance = Actual Amount - Budgeted Amount</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white fw-bold">
+            Budget Details
+        </div>
+        <div class="card-body p-4">
+            <form action="{% url 'add_budget' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Budget Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. 2025 Master Operating Budget" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fiscal Year</label>
+                        <input type="number" name="year" class="form-control" value="{% now 'Y' %}" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Optional notes about this budget plan..."></textarea>
+                    <div class="form-text">After creating the budget, you will be redirected to a grid where you can enter monthly targets for each account.</div>
+                </div>
+
+                <hr>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'budget_list' %}" class="btn btn-light me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg"></i> Create & Start Planning
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

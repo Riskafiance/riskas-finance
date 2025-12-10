@@ -1,0 +1,102 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Invoices</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-cash-coin"></i> Sales & Revenue Cycle</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-3">
+                <strong class="text-warning"><i class="bi bi-pencil"></i> 1. Draft</strong>
+                <p class="small text-muted mb-0">Preparing the bill. Not yet visible to the customer.</p>
+            </div>
+            <div class="col-md-3">
+                <strong class="text-info"><i class="bi bi-envelope"></i> 2. Sent</strong>
+                <p class="small text-muted mb-0">Delivered to customer. This counts as "Accounts Receivable."</p>
+            </div>
+            <div class="col-md-3">
+                <strong class="text-success"><i class="bi bi-check-circle-fill"></i> 3. Paid</strong>
+                <p class="small text-muted mb-0">Money received. The bank account is debited, and AR is cleared.</p>
+            </div>
+            <div class="col-md-3 border-start">
+                <p class="small mb-0">
+                    <strong>Tip:</strong> Use the "Receive Payment" button on an invoice to record the deposit into your bank account.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <a href="{% url 'create_invoice' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create New Invoice
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <form method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search Invoice # or Customer..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i></button>
+                {% if search_query %}
+                    <a href="{% url 'invoice_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td class="fw-bold text-primary">
+                            <a href="{% url 'invoice_detail' inv.id %}" class="text-decoration-none">{{ inv.invoice_number }}</a>
+                        </td>
+                        <td>{{ inv.invoice_date }}</td>
+                        <td>
+                            <a href="{% url 'customer_detail' inv.customer.id %}" class="text-decoration-none fw-bold text-dark">
+                                {{ inv.customer.name }}
+                            </a>
+                        </td>
+                        <td>{{ inv.due_date }}</td>
+                        <td class="fw-bold">${{ inv.total_amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if inv.status == 'Paid' %}bg-success
+                                {% elif inv.status == 'Sent' %}bg-info text-dark
+                                {% elif inv.status == 'Void' %}bg-danger
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ inv.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'invoice_detail' inv.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No invoices found matching your search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

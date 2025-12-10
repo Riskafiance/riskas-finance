@@ -1,0 +1,62 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Company Settings</h1>
+    <p class="text-muted">These details will appear on your Invoices, POs, and Reports.</p>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">Company Information</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Company Name</label>
+                            <input type="text" name="company_name" class="form-control" value="{{ company.company_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea name="address" class="form-control" rows="3">{{ company.address }}</textarea>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" value="{{ company.email }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="phone" class="form-control" value="{{ company.phone }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Website</label>
+                            <input type="url" name="website" class="form-control" value="{{ company.website }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">Branding</div>
+                    <div class="card-body text-center">
+                        <label class="form-label fw-bold">Company Logo</label>
+                        <div class="mb-3">
+                            {% if company.logo %}
+                                <img src="{{ company.logo.url }}" class="img-fluid border rounded p-2" style="max-height: 100px;">
+                            {% else %}
+                                <div class="p-4 bg-light border rounded text-muted">No Logo Uploaded</div>
+                            {% endif %}
+                        </div>
+                        <input type="file" name="logo" class="form-control">
+                        <div class="form-text">Upload a PNG or JPG.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        <button type="submit" class="btn btn-success px-5">Save Settings</button>
+    </form>
+{% endblock %}

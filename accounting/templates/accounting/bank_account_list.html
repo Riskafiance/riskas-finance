@@ -1,0 +1,77 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Bank Accounts</h1>
+        <a href="{% url 'add_bank_account' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Add Bank Account
+        </a>
+    </div>
+
+    <div class="alert alert-info shadow-sm mb-4" role="alert">
+        <h4 class="alert-heading"><i class="bi bi-info-circle-fill"></i> About Bank Reconciliation</h4>
+        <p>
+            Bank reconciliation is the process of matching the balances in your internal accounting records (General Ledger) 
+            to the corresponding information on your official Bank Statement. This ensures your financial data is accurate and helps detect errors or fraud.
+        </p>
+        <hr>
+        <p class="mb-0">
+            <strong><i class="bi bi-lightbulb"></i> How to reconcile:</strong> 
+            1. Click <strong>Upload CSV</strong> to import your bank statement. &nbsp;&nbsp;
+            2. Click <strong>Reconcile</strong> to enter the matching screen. &nbsp;&nbsp;
+            3. Match the bank lines (Left) with your system transactions (Right).
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Account #</th>
+                        <th>GL Account</th>
+                        <th>Currency</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acc in bank_accounts %}
+                    <tr>
+                        <td class="fw-bold">{{ acc.name }}</td>
+                        <td>{{ acc.account_number }}</td>
+                        <td>{{ acc.gl_account.account_number }} - {{ acc.gl_account.account_name }}</td>
+                        <td>{{ acc.currency }}</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'upload_bank_statement' acc.id %}" class="btn btn-sm btn-outline-secondary" title="Upload Statement">
+                                    <i class="bi bi-upload"></i> Upload
+                                </a>
+                                
+                                <a href="{% url 'reconcile_bank' acc.id %}" class="btn btn-sm btn-primary" title="Start Reconciliation">
+                                    <i class="bi bi-check-all"></i> Reconcile
+                                </a>
+
+                                <form action="{% url 'delete_bank_account' acc.id %}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this bank account? This includes deleting all uploaded statement history.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete Account" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            No bank accounts added yet. Click the button above to add one.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Financial Reports</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-bar-chart-steps"></i> Report Center</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-0">
+                    This is the central hub for analyzing your business performance. 
+                    Use these reports to track profitability, monitor cash flow, and prepare for tax season.
+                </p>
+                <p class="small text-muted mt-2 mb-0">
+                    <i class="bi bi-file-earmark-check text-success"></i> <strong>Tip:</strong> 
+                    Start with the **Trial Balance** to ensure your books are balanced, then check the **Income Statement** to see your profit.
+                </p>
+            </div>
+            <div class="col-md-4 border-start">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-printer fs-1 text-muted me-3"></i>
+                    <div>
+                        <small class="fw-bold text-uppercase text-muted">Export Ready</small><br>
+                        <small>Most reports can be downloaded as CSV for Excel.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-journal-bookmark"></i> General Ledger</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'trial_balance_report' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong class="text-primary">Trial Balance</strong>
+                            <br>
+                            <small class="text-muted">Summary of all account balances to ensure debits equal credits.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    
+                    <a href="{% url 'income_statement' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong class="text-primary">Income Statement</strong>
+                            <br>
+                            <small class="text-muted">Profit and Loss over a specific period.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'balance_sheet' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong class="text-primary">Balance Sheet</strong>
+                            <br>
+                            <small class="text-muted">Snapshot of Assets, Liabilities, and Equity.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'custom_report' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 bg-light">
+                        <div>
+                            <strong class="text-dark"><i class="bi bi-sliders"></i> Custom GL Report</strong>
+                            <br>
+                            <small class="text-muted">Filter transactions by Account, Type, or Date.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Operational Reports</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'ar_aging' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong>A/R Aging Summary</strong>
+                            <br>
+                            <small class="text-muted">Unpaid invoices grouped by days overdue.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'ap_aging' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong>A/P Aging Summary</strong>
+                            <br>
+                            <small class="text-muted">Unpaid bills (POs) grouped by days overdue.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'sales_by_customer' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <strong>Sales by Customer</strong>
+                            <br>
+                            <small class="text-muted">Total revenue generated per client.</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

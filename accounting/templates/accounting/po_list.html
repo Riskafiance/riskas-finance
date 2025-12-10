@@ -1,0 +1,124 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Purchase Orders</h1>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4">
+        <h5 class="alert-heading text-primary"><i class="bi bi-cart-check-fill"></i> Purchase Order Management</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-9">
+                <p class="mb-2">
+                    Purchase Orders (POs) are official documents sent to vendors to authorize a purchase. 
+                    They allow you to track **Committed Spend**—money you plan to spend but haven't paid yet.
+                </p>
+                <div class="d-flex gap-4 mt-3">
+                    <div class="text-center">
+                        <span class="badge bg-warning text-dark mb-1">Draft</span>
+                        <br><small class="text-muted" style="font-size: 0.75rem;">Preparation</small>
+                    </div>
+                    <div class="text-center">
+                        <span class="badge bg-info text-dark mb-1">Issued</span>
+                        <br><small class="text-muted" style="font-size: 0.75rem;">Sent to Vendor</small>
+                    </div>
+                    <div class="text-center">
+                        <span class="badge bg-secondary mb-1">Closed</span>
+                        <br><small class="text-muted" style="font-size: 0.75rem;">Completed/Paid</small>
+                    </div>
+                    <div class="text-center">
+                        <span class="badge bg-danger mb-1">Cancelled</span>
+                        <br><small class="text-muted" style="font-size: 0.75rem;">Voided</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 border-start text-center d-flex align-items-center justify-content-center">
+                <div class="text-muted">
+                    <i class="bi bi-clipboard-data fs-1"></i><br>
+                    <small class="fw-bold">Cost Control</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-dark text-white p-3 mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <a href="{% url 'create_po' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-plus-lg"></i> Create New PO
+                </a>
+            </div>
+            <div class="col-md-8">
+                <form method="GET" class="d-flex">
+                    <input type="text" name="search" class="form-control bg-dark text-white border-secondary me-2" placeholder="Search PO #, Vendor, or Description..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-outline-light">Search</button>
+                    {% if search_query %}
+                        <a href="{% url 'po_list' %}" class="btn btn-outline-danger ms-2">Clear</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>PO Number</th>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Description</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="fw-bold text-primary">
+                            <a href="{% url 'po_detail' order.id %}" class="text-decoration-none">{{ order.po_number }}</a>
+                        </td>
+                        <td>{{ order.po_date }}</td>
+                        <td>
+                            {% if order.vendor %}
+                                <a href="{% url 'vendor_detail' order.vendor.id %}" class="text-decoration-none text-dark fw-bold">
+                                    {{ order.vendor_name }}
+                                </a>
+                            {% else %}
+                                {{ order.vendor_name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ order.description|truncatechars:30 }}</td>
+                        <td class="fw-bold">${{ order.total_amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if order.status == 'Issued' %}bg-info text-dark
+                                {% elif order.status == 'Closed' %}bg-secondary
+                                {% elif order.status == 'Received' %}bg-primary
+                                {% elif order.status == 'Cancelled' %}bg-danger
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ order.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'po_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No purchase orders found matching your search.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

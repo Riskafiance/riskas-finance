@@ -1,0 +1,52 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Add New Customer</h1>
+        <a href="{% url 'customer_list' %}" class="btn btn-light">Cancel</a>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form action="{% url 'add_customer' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Customer Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="Company or Person Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="name@example.com">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Billing Address</label>
+                        <textarea name="address" class="form-control" rows="1" placeholder="Street, City, State, Zip"></textarea>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="bi bi-check-lg"></i> Save Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

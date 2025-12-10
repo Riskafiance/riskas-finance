@@ -1,0 +1,27 @@
+{% extends 'accounting/base.html' %}
+
+{% block content %}
+    <h1>Add Bank Account</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Bank Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Chase Checking" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Account Number (Last 4 digits)</label>
+            <input type="text" name="account_number" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Link to GL Account</label>
+            <select name="gl_account" class="form-select" required>
+                {% for asset in assets %}
+                    <option value="{{ asset.id }}">{{ asset.account_number }} - {{ asset.account_name }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Select the Asset account in your General Ledger that represents this bank account.</div>
+        </div>
+        <button type="submit" class="btn btn-success">Save Account</button>
+        <a href="{% url 'bank_account_list' %}" class="btn btn-light">Cancel</a>
+    </form>
+{% endblock %}
