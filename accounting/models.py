@@ -122,9 +122,16 @@ class Project(models.Model):
 # --- INVENTORY ---
 class Warehouse(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, unique=True)
-    address = models.TextField(blank=True, default='')
-    def __str__(self): return self.name
+    # REMOVED unique=True from the line below
+    name = models.CharField(max_length=100) 
+    location = models.CharField(max_length=200, blank=True, null=True)
+
+    class Meta:
+        # This ensures 'Main Warehouse' can exist for Company A AND Company B
+        unique_together = ('company', 'name')
+
+    def __str__(self):
+        return f"{self.name} - {self.company.name}"
 
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
