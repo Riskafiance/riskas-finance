@@ -1789,9 +1789,120 @@ def sales_by_customer(request):
     # Placeholder for Sales by Customer
     return render(request, 'accounting/sales_by_customer.html', {})
 
+@login_required
 def custom_report(request):
-    # Placeholder for Custom Report
-    return render(request, 'accounting/custom_report.html', {})
+    company = get_company(request)
+    
+    # --- 1. POPULATE DROPDOWNS (Always run this) ---
+    all_accounts = Account.objects.filter(company=company).order_by('account_number')
+    
+    # Get unique account types for the filter list
+    account_types = list(Account.objects.filter(company=company)
+                         .values_list('account_type', flat=True)
+                         .distinct().order_by('account_type'))
+
+    # Default Context
+    context = {
+        'all_accounts': all_accounts,
+        'account_types': account_types,
+        'start_date': request.POST.get('start_date') or f"{timezone.now().year}-01-01",
+        'end_date': request.POST.get('end_date') or f"{timezone.now().year}-12-31",
+        'report_data': None,
+        'selected_types': [],
+        'selected_accounts': [],
+    }
+
+    # --- 2. PROCESS REPORT GENERATION ---
+    if request.method == 'POST':
+        try:
+            start_date = context['start_date']
+            end_date = context['end_date']
+            
+            # Get selections from form
+            selected_types = request.POST.getlist('account_types')
+            selected_acc_ids = request.POST.getlist('accounts')
+            
+            # Convert IDs to integers for safety
+            selected_acc_ids = [int(id) for id in selected_acc_ids if id.isdigit()]
+            
+            context['selected_types'] = selected_types
+            context['selected_accounts'] = selected_acc_ids
+
+            # --- 3. FILTER ACCOUNTS ---
+            accounts = all_accounts
+            
+            # If user selected specific accounts, prioritize those
+            if selected_acc_ids:
+                accounts = accounts.filter(id__in=selected_acc_ids)
+            # Otherwise, check if they filtered by type
+            elif selected_types:
+                accounts = accounts.filter(account_type__in=selected_types)
+            
+            # --- 4. BUILD REPORT DATA ---
+            report_data = []
+            
+            for acc in accounts:
+                # Get lines within date range
+                lines = JournalVoucherLine.objects.filter(
+                    account=acc,
+                    journal_voucher__jv_date__range=[start_date, end_date],
+                    journal_voucher__status='Posted'
+                ).select_related('journal_voucher').order_by('journal_voucher__jv_date')
+
+                if not lines.exists() and acc.current_balance == 0:
+                    continue  # Skip empty accounts to keep report clean
+
+                # Calculate Starting Balance (Sum of all moves BEFORE start_date)
+                past_lines = JournalVoucherLine.objects.filter(
+                    account=acc,
+                    journal_voucher__jv_date__lt=start_date,
+                    journal_voucher__status='Posted'
+                )
+                
+                start_debit = past_lines.aggregate(Sum('debit_amount'))['debit_amount__sum'] or 0
+                start_credit = past_lines.aggregate(Sum('credit_amount'))['credit_amount__sum'] or 0
+                
+                if acc.normal_balance == 'Debit':
+                    starting_bal = start_debit - start_credit
+                else:
+                    starting_bal = start_credit - start_debit
+
+                # Process current lines
+                processed_lines = []
+                running_bal = starting_bal
+                
+                for line in lines:
+                    debit = line.debit_amount
+                    credit = line.credit_amount
+                    
+                    if acc.normal_balance == 'Debit':
+                        running_bal += (debit - credit)
+                    else:
+                        running_bal += (credit - debit)
+                        
+                    processed_lines.append({
+                        'date': line.journal_voucher.jv_date,
+                        'ref': line.journal_voucher.jv_number,
+                        'desc': line.line_description or line.journal_voucher.description,
+                        'debit': debit,
+                        'credit': credit,
+                        'balance': running_bal,
+                        'id': line.journal_voucher.id 
+                    })
+
+                report_data.append({
+                    'account': acc,
+                    'starting_balance': starting_bal,
+                    'lines': processed_lines,
+                    'ending_balance': running_bal
+                })
+
+            context['report_data'] = report_data
+
+        except Exception as e:
+            messages.error(request, f"Error generating report: {str(e)}")
+            
+    return render(request, 'accounting/custom_report.html', context)
 
 def predict_expense_account(request):
     vendor_id = request.GET.get('vendor_id')
