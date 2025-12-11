@@ -1,11 +1,12 @@
 {% extends 'accounting/base.html' %}
 {% load static %}
-
-{% block content %}
+{% load humanize %} {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">&laquo; Back to List</a>
         <div>
-            <button onclick="window.print()" class="btn btn-secondary me-2">🖨️ Print</button>
+            <button onclick="window.print()" class="btn btn-secondary me-2">
+                <i class="bi bi-printer"></i> Print
+            </button>
 
             {% if expense.status == 'Draft' %}
                 <form action="{% url 'change_expense_status' expense.id 'Approved' %}" method="POST" class="d-inline">
@@ -20,14 +21,22 @@
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-lg border-0" style="min-height: 700px; max-width: 900px; margin: 0 auto;">
         <div class="card-body p-5">
             
             <div class="row mb-5">
                 <div class="col-6">
-                    <img src="{% static 'accounting/images/logo.png' %}" alt="Logo" style="max-width: 150px;" class="mb-3">
-                    <h4 class="fw-bold text-primary">Riska's Finance</h4>
-                    <p class="text-muted mb-0">614 Crawford Ave, Dixon, IL</p>
+                    {% if expense.company.logo %}
+                        <img src="{{ expense.company.logo.url }}" alt="Logo" style="max-height: 80px;" class="mb-3">
+                    {% else %}
+                        <img src="{% static 'accounting/images/logo.png' %}" alt="Logo" style="max-width: 150px;" class="mb-3">
+                    {% endif %}
+                    
+                    <h4 class="fw-bold text-primary">{{ expense.company.name }}</h4>
+                    <p class="text-muted mb-0">{{ expense.company.address|default:"--"|linebreaksbr }}</p>
+                    {% if expense.company.phone %}
+                        <p class="text-muted small">{{ expense.company.phone }}</p>
+                    {% endif %}
                 </div>
                 <div class="col-6 text-end">
                     <h1 class="display-6 fw-bold text-uppercase text-secondary">EXPENSE</h1>
@@ -45,13 +54,13 @@
 
             <div class="row mb-5">
                 <div class="col-md-6">
-                    <h6 class="text-uppercase text-muted fw-bold">Paid To</h6>
+                    <h6 class="text-uppercase text-muted fw-bold small">Paid To</h6>
                     <h4 class="mb-1">{{ expense.vendor.name }}</h4>
                     <p class="mb-0">{{ expense.vendor.address|linebreaksbr }}</p>
                 </div>
                 <div class="col-md-6 text-end">
-                    <h6 class="text-uppercase text-muted fw-bold">Payment Details</h6>
-                    <p class="mb-0">Paid From: <strong>{{ expense.payment_account.account_name }}</strong></p>
+                    <h6 class="text-uppercase text-muted fw-bold small">Payment Details</h6>
+                    <p class="mb-0">Paid From Account: <strong>{{ expense.payment_account.account_name }}</strong></p>
                     <p class="mb-0 text-muted"><em>{{ expense.description }}</em></p>
                 </div>
             </div>
@@ -70,7 +79,7 @@
                         <tr>
                             <td>{{ line.description }}</td>
                             <td class="text-muted small">{{ line.expense_account.account_name }}</td>
-                            <td class="text-end fw-bold">${{ line.amount|floatformat:2 }}</td>
+                            <td class="text-end fw-bold">${{ line.amount|floatformat:2|intcomma }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -82,7 +91,7 @@
                     <table class="table table-borderless">
                         <tr class="border-top border-bottom border-2 border-dark table-light">
                             <td class="fs-4 fw-bold text-end">Total Paid:</td>
-                            <td class="fs-4 fw-bold text-end text-primary">${{ expense.total_amount|floatformat:2 }}</td>
+                            <td class="fs-4 fw-bold text-end text-primary">${{ expense.total_amount|floatformat:2|intcomma }}</td>
                         </tr>
                     </table>
                 </div>
@@ -94,8 +103,9 @@
     <style>
         @media print {
             .no-print { display: none !important; }
-            body { background-color: white; }
-            .card { box-shadow: none !important; border: none !important; }
+            body { background-color: white; -webkit-print-color-adjust: exact; }
+            .card { box-shadow: none !important; border: none !important; width: 100%; max-width: 100%; margin: 0; padding: 0; }
+            .table-dark { background-color: #333 !important; color: white !important; }
         }
     </style>
 {% endblock %}
