@@ -1716,56 +1716,77 @@ def income_statement(request):
     })
 
 @login_required
-@login_required
 def balance_sheet(request):
     company = get_company(request)
     
-    # 1. Define ALL possible names for Asset types
-    ASSET_TYPES = [
-        'Asset', 'Assets', 'Current Asset', 'Fixed Assets', 'Bank', 
-        'Cash', 'Accounts Receivable', 'Inventory', 'Other Current Assets', 
-        'Other Assets', 'Security Deposit'
-    ]
-    
-    # 2. Define ALL possible names for Liability types
-    LIABILITY_TYPES = [
-        'Liability', 'Liabilities', 'Current Liability', 'Long Term Liabilities', 
-        'Credit Card', 'Accounts Payable', 'Other Current Liabilities', 
-        'Payroll Liabilities', 'Taxes Payable'
-    ]
-    
-    # 3. Define ALL possible names for Equity types
-    EQUITY_TYPES = [
-        'Equity', 'Owner\'s Equity', 'Shareholder\'s Equity', 
-        'Retained Earnings', 'Capital', 'Opening Balance Equity'
-    ]
+    # 1. Get the "As Of" Date (Default to Today if not set)
+    target_date_str = request.GET.get('target_date')
+    if target_date_str:
+        target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
+    else:
+        target_date = timezone.now().date()
+        target_date_str = target_date.strftime('%Y-%m-%d')
 
-    # 4. Filter the database using these lists
-    assets = Account.objects.filter(company=company, account_type__in=ASSET_TYPES).order_by('account_number')
-    liabilities = Account.objects.filter(company=company, account_type__in=LIABILITY_TYPES).order_by('account_number')
-    equity = Account.objects.filter(company=company, account_type__in=EQUITY_TYPES).order_by('account_number')
+    # 2. Define Account Types
+    ASSET_TYPES = ['Asset', 'Assets', 'Current Asset', 'Fixed Assets', 'Bank', 'Cash', 'Accounts Receivable', 'Inventory', 'Other Current Assets', 'Other Assets', 'Security Deposit']
+    LIABILITY_TYPES = ['Liability', 'Liabilities', 'Current Liability', 'Long Term Liabilities', 'Credit Card', 'Accounts Payable', 'Other Current Liabilities', 'Payroll Liabilities', 'Taxes Payable']
+    EQUITY_TYPES = ['Equity', 'Owner\'s Equity', 'Shareholder\'s Equity', 'Retained Earnings', 'Capital', 'Opening Balance Equity']
 
-    # 5. Calculate Totals safely (treating None as 0)
-    total_assets = assets.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
-    total_liabilities = liabilities.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
-    total_equity = equity.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+    # 3. Helper Function to Calculate Historical Balances
+    def get_historical_balances(account_types):
+        # Fetch accounts
+        accounts = Account.objects.filter(company=company, account_type__in=account_types).order_by('account_number')
+        results = []
+        total = decimal.Decimal(0)
+        
+        for acc in accounts:
+            # Sum all journal lines for this account UP TO the target date
+            lines = JournalVoucherLine.objects.filter(
+                account=acc,
+                journal_voucher__jv_date__lte=target_date,  # <--- CRITICAL: Filter by date
+                journal_voucher__status='Posted'
+            )
+            
+            # Aggregate Debits and Credits
+            debits = lines.aggregate(Sum('debit_amount'))['debit_amount__sum'] or 0
+            credits = lines.aggregate(Sum('credit_amount'))['credit_amount__sum'] or 0
+            
+            # Calculate Balance based on Normal Balance
+            if acc.normal_balance == 'Debit':
+                bal = debits - credits
+            else:
+                bal = credits - debits
+            
+            # Only include non-zero accounts in the report
+            if bal != 0:
+                acc.calculated_balance = bal  # Attach temporary value to object
+                results.append(acc)
+                total += bal
+        
+        return results, total
 
-    # 6. Check for Net Income (Revenue - Expenses) to add to Equity dynamically
-    # This ensures the Balance Sheet actually balances!
-    revenue_types = ['Revenue', 'Income', 'Other Income', 'Sales']
-    expense_types = ['Expense', 'Expenses', 'Cost of Goods Sold', 'Other Expense']
+    # 4. Get Data
+    assets, total_assets = get_historical_balances(ASSET_TYPES)
+    liabilities, total_liabilities = get_historical_balances(LIABILITY_TYPES)
+    equity, total_equity = get_historical_balances(EQUITY_TYPES)
+
+    # 5. Calculate Net Income (Retained Earnings) for the period (Revenue - Expenses)
+    # This ensures Assets = Liabilities + Equity + Net Income
+    rev_types = ['Revenue', 'Income', 'Other Income', 'Sales']
+    exp_types = ['Expense', 'Expenses', 'Cost of Goods Sold', 'Other Expense', 'Depreciation']
     
-    total_revenue = Account.objects.filter(company=company, account_type__in=revenue_types).aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
-    total_expenses = Account.objects.filter(company=company, account_type__in=expense_types).aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
-    
-    # Calculate Net Income (Revenue is normally Credit, Expense is Debit)
-    # Note: Logic depends on how you store balances. Usually Revenue is stored as positive credit.
-    # We'll assume standard storage where Credits increase Revenue/Equity and Debits increase Assets/Expenses.
-    # If your system stores everything as positive numbers based on normal balance:
-    current_net_income = total_revenue - total_expenses
+    # Revenue (Credits - Debits)
+    rev_lines = JournalVoucherLine.objects.filter(company=company, account__account_type__in=rev_types, journal_voucher__jv_date__lte=target_date, journal_voucher__status='Posted')
+    rev_total = (rev_lines.aggregate(Sum('credit_amount'))['credit_amount__sum'] or 0) - (rev_lines.aggregate(Sum('debit_amount'))['debit_amount__sum'] or 0)
 
-    # Add Net Income to Total Equity for the report display
-    total_equity += current_net_income
+    # Expenses (Debits - Credits)
+    exp_lines = JournalVoucherLine.objects.filter(company=company, account__account_type__in=exp_types, journal_voucher__jv_date__lte=target_date, journal_voucher__status='Posted')
+    exp_total = (exp_lines.aggregate(Sum('debit_amount'))['debit_amount__sum'] or 0) - (exp_lines.aggregate(Sum('credit_amount'))['credit_amount__sum'] or 0)
+
+    current_net_income = rev_total - exp_total
+    
+    # Add Net Income to Total Equity for balancing
+    total_equity_and_income = total_equity + current_net_income
 
     return render(request, 'accounting/balance_sheet.html', {
         'assets': assets,
@@ -1774,7 +1795,10 @@ def balance_sheet(request):
         'total_assets': total_assets,
         'total_liabilities': total_liabilities,
         'total_equity': total_equity,
-        'current_net_income': current_net_income, # Optional: Pass this if you want to show it as a line item
+        'total_equity_and_income': total_equity_and_income,
+        'current_net_income': current_net_income,
+        'target_date': target_date, # Date object for display
+        'target_date_str': target_date_str, # String for input field
     })
 
 def ar_aging(request):

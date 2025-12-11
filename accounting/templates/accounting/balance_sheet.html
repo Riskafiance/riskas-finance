@@ -5,9 +5,16 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <h1 class="h2">Balance Sheet</h1>
-    <div>
-        <button onclick="window.print()" class="btn btn-secondary shadow-sm">
-            <i class="bi bi-printer me-1"></i> Print Report
+    
+    <div class="d-flex align-items-center bg-white p-2 rounded shadow-sm border">
+        <form class="d-flex align-items-center m-0" method="GET">
+            <label class="small text-muted me-2 fw-bold text-uppercase">As Of:</label>
+            <input type="date" name="target_date" class="form-control form-control-sm me-2" value="{{ target_date_str }}" style="width: 150px;" onchange="this.form.submit()">
+            <button type="submit" class="btn btn-sm btn-primary">Update</button>
+        </form>
+        <div class="vr mx-3"></div>
+        <button onclick="window.print()" class="btn btn-sm btn-secondary">
+            <i class="bi bi-printer me-1"></i> Print
         </button>
     </div>
 </div>
@@ -26,36 +33,23 @@
             <hr class="my-4" style="width: 60%; margin: 0 auto; border-color: #333;">
             
             <h3 class="fw-bold mt-3 text-dark">BALANCE SHEET</h3>
-            <p class="text-muted fst-italic">As of {% now "F j, Y" %}</p>
+            <p class="text-muted fst-italic">As of {{ target_date|date:"F j, Y" }}</p>
         </div>
 
         <div class="report-content">
             
             <div class="section mb-5">
-                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
-                    Assets
-                </h5>
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">Assets</h5>
                 <table class="table table-sm table-hover align-middle">
-                    <thead class="text-muted small">
-                        <tr>
-                            <th style="width: 15%;">Acct #</th>
-                            <th style="width: 60%;">Account Name</th>
-                            <th class="text-end">Balance</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {% for asset in assets %}
                         <tr>
-                            <td class="text-muted font-monospace small">{{ asset.account_number }}</td>
-                            <td class="fw-500">{{ asset.account_name }}</td>
-                            <td class="text-end text-dark">
-                                ${{ asset.current_balance|floatformat:2|intcomma }}
-                            </td>
+                            <td style="width: 15%;" class="text-muted font-monospace small">{{ asset.account_number }}</td>
+                            <td style="width: 60%;" class="fw-500">{{ asset.account_name }}</td>
+                            <td class="text-end text-dark">${{ asset.calculated_balance|floatformat:2|intcomma }}</td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted fst-italic py-2">No Asset accounts found.</td>
-                        </tr>
+                        <tr><td colspan="3" class="text-center text-muted fst-italic py-2">No Assets found.</td></tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
@@ -70,72 +64,50 @@
             </div>
 
             <div class="section mb-4">
-                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
-                    Liabilities
-                </h5>
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">Liabilities</h5>
                 <table class="table table-sm table-hover align-middle">
-                    <thead class="text-muted small">
-                        <tr>
-                            <th style="width: 15%;">Acct #</th>
-                            <th style="width: 60%;">Account Name</th>
-                            <th class="text-end">Balance</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {% for liab in liabilities %}
                         <tr>
-                            <td class="text-muted font-monospace small">{{ liab.account_number }}</td>
-                            <td class="fw-500">{{ liab.account_name }}</td>
-                            <td class="text-end text-dark">
-                                ${{ liab.current_balance|floatformat:2|intcomma }}
-                            </td>
+                            <td style="width: 15%;" class="text-muted font-monospace small">{{ liab.account_number }}</td>
+                            <td style="width: 60%;" class="fw-500">{{ liab.account_name }}</td>
+                            <td class="text-end text-dark">${{ liab.calculated_balance|floatformat:2|intcomma }}</td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted fst-italic py-2">No Liability accounts found.</td>
-                        </tr>
+                        <tr><td colspan="3" class="text-center text-muted fst-italic py-2">No Liabilities found.</td></tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
                         <tr class="fw-bold text-dark">
                             <td colspan="2" class="ps-3 pt-3">Total Liabilities</td>
-                            <td class="text-end pt-3 pe-2 border-top border-dark">
-                                ${{ total_liabilities|floatformat:2|intcomma }}
-                            </td>
+                            <td class="text-end pt-3 pe-2 border-top border-dark">${{ total_liabilities|floatformat:2|intcomma }}</td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
             <div class="section mb-4">
-                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
-                    Equity
-                </h5>
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">Equity</h5>
                 <table class="table table-sm table-hover align-middle">
-                    <thead class="text-muted small">
-                        <tr>
-                            <th style="width: 15%;">Acct #</th>
-                            <th style="width: 60%;">Account Name</th>
-                            <th class="text-end">Balance</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {% for eq in equity %}
                         <tr>
-                            <td class="text-muted font-monospace small">{{ eq.account_number }}</td>
-                            <td class="fw-500">{{ eq.account_name }}</td>
-                            <td class="text-end text-dark">
-                                ${{ eq.current_balance|floatformat:2|intcomma }}
-                            </td>
+                            <td style="width: 15%;" class="text-muted font-monospace small">{{ eq.account_number }}</td>
+                            <td style="width: 60%;" class="fw-500">{{ eq.account_name }}</td>
+                            <td class="text-end text-dark">${{ eq.calculated_balance|floatformat:2|intcomma }}</td>
                         </tr>
                         {% endfor %}
+                        
+                        <tr class="bg-light">
+                            <td class="text-muted font-monospace small">--</td>
+                            <td class="fw-bold text-primary">Net Income (Year to Date)</td>
+                            <td class="text-end fw-bold text-primary">${{ current_net_income|floatformat:2|intcomma }}</td>
+                        </tr>
                     </tbody>
                     <tfoot>
                         <tr class="fw-bold text-dark">
                             <td colspan="2" class="ps-3 pt-3">Total Equity</td>
-                            <td class="text-end pt-3 pe-2 border-top border-dark">
-                                ${{ total_equity|floatformat:2|intcomma }}
-                            </td>
+                            <td class="text-end pt-3 pe-2 border-top border-dark">${{ total_equity_and_income|floatformat:2|intcomma }}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -146,7 +118,7 @@
                     <tr class="fw-bold fs-5 bg-light">
                         <td class="ps-3 py-3 text-uppercase">Total Liabilities & Equity</td>
                         <td class="text-end py-3 pe-2" style="border-top: 2px solid #000; border-bottom: 3px double #000;">
-                            ${{ total_liabilities|add:total_equity|floatformat:2|intcomma }}
+                            ${{ total_liabilities|add:total_equity_and_income|floatformat:2|intcomma }}
                         </td>
                     </tr>
                 </table>
@@ -162,34 +134,15 @@
 </div>
 
 <style>
-    /* Professional Document Styling */
-    .report-paper {
-        max-width: 850px;
-        margin: 0 auto;
-        font-family: 'Times New Roman', Times, serif; /* Classic financial font */
-    }
-    
-    .report-paper h2, .report-paper h3, .report-paper h5 {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Clean headers */
-    }
-
+    .report-paper { max-width: 850px; margin: 0 auto; font-family: 'Times New Roman', Times, serif; }
+    .report-paper h2, .report-paper h3, .report-paper h5 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     .fw-500 { font-weight: 500; }
-
-    /* Print Optimization */
     @media print {
         @page { margin: 0.5in; size: letter; }
         body { background-color: white; -webkit-print-color-adjust: exact; }
         .no-print { display: none !important; }
-        .report-paper { 
-            box-shadow: none !important; 
-            border: none !important; 
-            width: 100%; 
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
-        }
+        .report-paper { box-shadow: none !important; border: none !important; width: 100%; max-width: 100%; margin: 0; padding: 0; }
         .card-body { padding: 0 !important; }
-        /* Ensure table rows don't split awkwardly */
         tr { break-inside: avoid; }
     }
 </style>
