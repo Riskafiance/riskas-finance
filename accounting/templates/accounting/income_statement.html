@@ -1,113 +1,125 @@
 {% extends 'accounting/base.html' %}
+{% load humanize %}
+{% load static %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-        <div class="d-flex align-items-center">
-            <select class="form-select form-select-sm me-2" style="width: 150px;">
-                <option>Compact | 100%</option>
-            </select>
-        </div>
-        <div>
-            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-                <i class="bi bi-printer"></i> Print
-            </button>
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h1 class="h2">Income Statement</h1>
+    <form class="d-flex align-items-center" method="GET">
+        <input type="date" name="start_date" class="form-control me-2" value="{{ start_date }}">
+        <span class="me-2">to</span>
+        <input type="date" name="end_date" class="form-control me-2" value="{{ end_date }}">
+        <button type="submit" class="btn btn-primary">Run Report</button>
+        <button type="button" onclick="window.print()" class="btn btn-secondary ms-2"><i class="bi bi-printer"></i></button>
+    </form>
+</div>
 
-    <div class="card bg-light mb-4 no-print shadow-sm">
-        <div class="card-body py-2">
-            <form method="GET" class="row g-2 align-items-center">
-                <div class="col-auto"><label class="small fw-bold text-muted me-2">From:</label></div>
-                <div class="col-auto"><input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}"></div>
-                <div class="col-auto"><label class="small fw-bold text-muted mx-2">To:</label></div>
-                <div class="col-auto"><input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}"></div>
-                <div class="col-auto"><button class="btn btn-primary btn-sm ms-2">Run Report</button></div>
-            </form>
-        </div>
-    </div>
-
-    <div class="card shadow-lg border-0">
-        <div class="card-body p-5">
+<div class="card shadow-sm border-0 report-paper">
+    <div class="card-body p-5">
+        
+        <div class="text-center mb-5">
+            {% if user.company_profile.logo %}
+                <img src="{{ user.company_profile.logo.url }}" alt="Logo" style="max-height: 60px;" class="mb-2">
+            {% endif %}
             
-            <div class="text-center mb-5">
-                <h3 class="fw-bold text-dark mb-0">Profit and Loss</h3>
-                <h5 class="text-secondary mt-1">Riska's Finance</h5>
-                <p class="text-muted small mb-0">{{ start_date|date:"F j" }} - {{ end_date|date:"F j, Y" }}</p>
-            </div>
+            <h2 class="fw-bold text-uppercase">{{ user.company_profile.name }}</h2>
+            <p class="text-muted mb-0">{{ user.company_profile.address|default:"" }}</p>
+            <p class="text-muted">{{ user.company_profile.phone|default:"" }}</p>
+            
+            <hr class="my-4" style="width: 50%; margin: 0 auto;">
+            
+            <h3 class="fw-bold mt-3">Income Statement</h3>
+            <p class="text-muted">For the period {{ start_date }} to {{ end_date }}</p>
+        </div>
 
-            <table class="table table-hover table-borderless report-table">
+        <div class="table-responsive">
+            <table class="table table-borderless">
+                
                 <thead class="border-bottom border-dark">
                     <tr>
-                        <th class="text-start fw-bold">Account</th>
-                        <th class="text-end fw-bold">Total</th>
+                        <th class="text-uppercase text-secondary">Revenue</th>
+                        <th class="text-end"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    
-                    <tr class="bg-light fw-bold"><td colspan="2">Income</td></tr>
                     {% for item in inc_list %}
-                    <tr><td class="ps-4">{{ item.name }}</td><td class="text-end">{{ item.amount|floatformat:2 }}</td></tr>
-                    {% endfor %}
-                    <tr class="border-top"><td class="ps-4 fw-bold">Total Income</td><td class="text-end fw-bold">${{ inc_total|floatformat:2 }}</td></tr>
-
-                    <tr class="bg-light fw-bold"><td colspan="2">Cost of Sales</td></tr>
-                    {% for item in cogs_list %}
-                    <tr><td class="ps-4">{{ item.name }}</td><td class="text-end">{{ item.amount|floatformat:2 }}</td></tr>
-                    {% endfor %}
-                    <tr class="border-top"><td class="ps-4 fw-bold">Total Cost of Sales</td><td class="text-end fw-bold">${{ cogs_total|floatformat:2 }}</td></tr>
-
-                    <tr class="bg-light border-top border-bottom border-2">
-                        <td class="fw-bold ps-3">Gross Profit</td>
-                        <td class="text-end fw-bold">${{ gross_profit|floatformat:2 }}</td>
+                    <tr>
+                        <td class="ps-4">{{ item.name }}</td>
+                        <td class="text-end">${{ item.amount|floatformat:2|intcomma }}</td>
                     </tr>
-
-                    <tr class="bg-light fw-bold"><td colspan="2">Expenses</td></tr>
-                    {% for item in exp_list %}
-                    <tr><td class="ps-4">{{ item.name }}</td><td class="text-end">{{ item.amount|floatformat:2 }}</td></tr>
                     {% endfor %}
-                    <tr class="border-top"><td class="ps-4 fw-bold">Total Expenses</td><td class="text-end fw-bold">${{ exp_total|floatformat:2 }}</td></tr>
-
-                    <tr class="bg-light border-top">
-                        <td class="fw-bold ps-3">Net Operating Income</td>
-                        <td class="text-end fw-bold">${{ net_operating_income|floatformat:2 }}</td>
+                    <tr class="fw-bold bg-light">
+                        <td class="ps-4">Total Revenue</td>
+                        <td class="text-end border-top border-dark">${{ inc_total|floatformat:2|intcomma }}</td>
                     </tr>
-
-                    {% if other_inc_list or other_inc_total != 0 %}
-                    <tr class="bg-light fw-bold"><td colspan="2">Other Income</td></tr>
-                    {% for item in other_inc_list %}
-                    <tr><td class="ps-4">{{ item.name }}</td><td class="text-end">{{ item.amount|floatformat:2 }}</td></tr>
-                    {% endfor %}
-                    <tr class="border-top"><td class="ps-4 fw-bold">Total Other Income</td><td class="text-end fw-bold">${{ other_inc_total|floatformat:2 }}</td></tr>
-                    {% endif %}
-
-                    {% if other_exp_list or other_exp_total != 0 %}
-                    <tr class="bg-light fw-bold"><td colspan="2">Other Expenses</td></tr>
-                    {% for item in other_exp_list %}
-                    <tr><td class="ps-4">{{ item.name }}</td><td class="text-end">{{ item.amount|floatformat:2 }}</td></tr>
-                    {% endfor %}
-                    <tr class="border-top"><td class="ps-4 fw-bold">Total Other Expenses</td><td class="text-end fw-bold">${{ other_exp_total|floatformat:2 }}</td></tr>
-                    {% endif %}
-
-                    <tr class="bg-light border-top">
-                        <td class="fw-bold ps-3">Net Other Income</td>
-                        <td class="text-end fw-bold">${{ net_other_income|floatformat:2 }}</td>
-                    </tr>
-
-                    <tfoot class="border-top border-3 border-dark">
-                        <tr class="bg-light">
-                            <td class="fw-bold pt-3 ps-3 fs-5">Net Income</td>
-                            <td class="text-end fw-bold pt-3 fs-5">
-                                ${{ net_income|floatformat:2 }}
-                            </td>
-                        </tr>
-                    </tfoot>
                 </tbody>
+
+                <thead class="border-bottom border-dark mt-4">
+                    <tr><td colspan="2" class="pt-4"></td></tr>
+                    <tr>
+                        <th class="text-uppercase text-secondary">Cost of Goods Sold</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cogs_list %}
+                    <tr>
+                        <td class="ps-4">{{ item.name }}</td>
+                        <td class="text-end">${{ item.amount|floatformat:2|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fw-bold bg-light">
+                        <td class="ps-4">Total COGS</td>
+                        <td class="text-end border-top border-dark">${{ cogs_total|floatformat:2|intcomma }}</td>
+                    </tr>
+                </tbody>
+
+                <tr><td colspan="2"></td></tr>
+                <tr class="fs-5 fw-bold table-active">
+                    <td>GROSS PROFIT</td>
+                    <td class="text-end">${{ gross_profit|floatformat:2|intcomma }}</td>
+                </tr>
+
+                <thead class="border-bottom border-dark mt-4">
+                    <tr><td colspan="2" class="pt-4"></td></tr>
+                    <tr>
+                        <th class="text-uppercase text-secondary">Operating Expenses</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in exp_list %}
+                    <tr>
+                        <td class="ps-4">{{ item.name }}</td>
+                        <td class="text-end">${{ item.amount|floatformat:2|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fw-bold bg-light">
+                        <td class="ps-4">Total Expenses</td>
+                        <td class="text-end border-top border-dark">${{ exp_total|floatformat:2|intcomma }}</td>
+                    </tr>
+                </tbody>
+
+                <tr><td colspan="2" class="pt-4"></td></tr>
+                <tr class="fs-4 fw-bold text-white bg-primary">
+                    <td class="ps-3 py-3">NET INCOME</td>
+                    <td class="text-end pe-3 py-3">${{ net_income|floatformat:2|intcomma }}</td>
+                </tr>
+
             </table>
         </div>
     </div>
+</div>
 
-    <style>
-        .report-table td, .report-table th { padding: 0.5rem 1rem; font-size: 0.9rem; }
-        @media print { .no-print { display: none !important; } body { background-color: white; } .card { box-shadow: none !important; border: none !important; } }
-    </style>
+<style>
+    .report-paper {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    @media print {
+        body { background-color: white; }
+        .no-print { display: none; }
+        .report-paper { box-shadow: none !important; border: none !important; }
+    }
+</style>
 {% endblock %}
