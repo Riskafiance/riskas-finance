@@ -1,21 +1,25 @@
-import re  # <--- ADD THIS LINE at the very top
+import re
 import random
-from django.core.mail import send_mail
-from django.conf import settings
 import csv
 import decimal
 import calendar
-from .forms import ClientRegistrationForm
 from datetime import datetime, timedelta
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404 # <--- This fixes the NameError
+from django.utils import timezone
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
 from django.db.models import Sum, Q, Count
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
+
+# Import your forms and models
+from .forms import ClientRegistrationForm
+from .models import * # <--- This is CRITICAL for database access
 
 # Import models
 from .models import (
@@ -767,11 +771,26 @@ def po_list(request):
     return render(request, 'accounting/po_list.html', {'orders': orders})
 
 @login_required
-def po_detail(request, po_id):
+def po_detail(request, po_id):  # <--- CHANGED 'pk' TO 'po_id' HERE
     company = get_company(request)
-    po = PurchaseOrder.objects.get(pk=po_id, company=company)
-    paid = po.expenses.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    return render(request, 'accounting/po_detail.html', {'order': po, 'total_paid': paid, 'remaining_balance': po.total_amount - paid, 'related_expenses': po.expenses.all()})
+    # Use po_id to find the order
+    order = get_object_or_404(PurchaseOrder, pk=po_id, company=company) 
+    
+    # --- CALCULATE USAGE ---
+    amount_used = order.expense_set.aggregate(total=Sum('total_amount'))['total'] or 0
+    remaining_balance = order.total_amount - amount_used
+    
+    if order.total_amount > 0:
+        percent_used = (amount_used / order.total_amount) * 100
+    else:
+        percent_used = 0
+
+    return render(request, 'accounting/po_detail.html', {
+        'order': order,
+        'amount_used': amount_used,
+        'remaining_balance': remaining_balance,
+        'percent_used': percent_used
+    })
 
 @login_required
 def change_po_status(request, po_id, new_status):

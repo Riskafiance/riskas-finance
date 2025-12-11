@@ -291,6 +291,7 @@ class Expense(models.Model):
     description = models.TextField(blank=True, default='')
     payment_account = models.ForeignKey(Account, related_name='expense_payments', on_delete=models.PROTECT)
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenses')
+    purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.SET_NULL, null=True, blank=True)
     
     # --- NEW PROJECT LINK ---
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenses')
