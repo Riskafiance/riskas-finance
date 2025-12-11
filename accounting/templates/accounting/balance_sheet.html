@@ -1,11 +1,14 @@
 {% extends 'accounting/base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <h1 class="h2">Balance Sheet</h1>
     <div>
-        <button onclick="window.print()" class="btn btn-secondary"><i class="bi bi-printer"></i> Print Report</button>
+        <button onclick="window.print()" class="btn btn-secondary shadow-sm">
+            <i class="bi bi-printer me-1"></i> Print Report
+        </button>
     </div>
 </div>
 
@@ -14,67 +17,180 @@
         
         <div class="text-center mb-5">
             {% if user.company_profile.logo %}
-                <img src="{{ user.company_profile.logo.url }}" alt="Logo" style="max-height: 50px;" class="mb-2">
+                <img src="{{ user.company_profile.logo.url }}" alt="Logo" style="max-height: 60px;" class="mb-3">
             {% endif %}
-            <h3 class="fw-bold text-uppercase">{{ user.company_profile.name }}</h3>
-            <p class="text-muted mb-0">{{ user.company_profile.address|default:"" }}</p>
-            <h2 class="fw-bold mt-3">Balance Sheet</h2>
-            <p class="text-muted">As of {% now "F j, Y" %}</p>
-            <hr class="my-4" style="width: 50%; margin: 0 auto;">
+            
+            <h2 class="fw-bold text-uppercase mb-1">{{ user.company_profile.name }}</h2>
+            <p class="text-muted mb-0">{{ user.company_profile.address|default:""|linebreaksbr }}</p>
+            
+            <hr class="my-4" style="width: 60%; margin: 0 auto; border-color: #333;">
+            
+            <h3 class="fw-bold mt-3 text-dark">BALANCE SHEET</h3>
+            <p class="text-muted fst-italic">As of {% now "F j, Y" %}</p>
         </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <h5 class="text-uppercase fw-bold text-success border-bottom pb-2">Assets</h5>
-                <table class="table table-borderless table-sm">
-                    {% for asset in assets %}
-                    <tr>
-                        <td>{{ asset.account_name }}</td>
-                        <td class="text-end">${{ asset.current_balance|floatformat:2|intcomma }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr class="fw-bold border-top border-dark">
-                        <td class="pt-2">Total Assets</td>
-                        <td class="text-end pt-2">${{ total_assets|floatformat:2|intcomma }}</td>
+        <div class="report-content">
+            
+            <div class="section mb-5">
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
+                    Assets
+                </h5>
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="text-muted small">
+                        <tr>
+                            <th style="width: 15%;">Acct #</th>
+                            <th style="width: 60%;">Account Name</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                        <tr>
+                            <td class="text-muted font-monospace small">{{ asset.account_number }}</td>
+                            <td class="fw-500">{{ asset.account_name }}</td>
+                            <td class="text-end text-dark">
+                                ${{ asset.current_balance|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted fst-italic py-2">No Asset accounts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold fs-5 bg-light">
+                            <td colspan="2" class="ps-3 py-3">TOTAL ASSETS</td>
+                            <td class="text-end py-3 pe-2" style="border-top: 2px solid #000; border-bottom: 3px double #000;">
+                                ${{ total_assets|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="section mb-4">
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
+                    Liabilities
+                </h5>
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="text-muted small">
+                        <tr>
+                            <th style="width: 15%;">Acct #</th>
+                            <th style="width: 60%;">Account Name</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for liab in liabilities %}
+                        <tr>
+                            <td class="text-muted font-monospace small">{{ liab.account_number }}</td>
+                            <td class="fw-500">{{ liab.account_name }}</td>
+                            <td class="text-end text-dark">
+                                ${{ liab.current_balance|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted fst-italic py-2">No Liability accounts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold text-dark">
+                            <td colspan="2" class="ps-3 pt-3">Total Liabilities</td>
+                            <td class="text-end pt-3 pe-2 border-top border-dark">
+                                ${{ total_liabilities|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="section mb-4">
+                <h5 class="text-uppercase fw-bold text-secondary border-bottom border-2 pb-2 mb-3">
+                    Equity
+                </h5>
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="text-muted small">
+                        <tr>
+                            <th style="width: 15%;">Acct #</th>
+                            <th style="width: 60%;">Account Name</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eq in equity %}
+                        <tr>
+                            <td class="text-muted font-monospace small">{{ eq.account_number }}</td>
+                            <td class="fw-500">{{ eq.account_name }}</td>
+                            <td class="text-end text-dark">
+                                ${{ eq.current_balance|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold text-dark">
+                            <td colspan="2" class="ps-3 pt-3">Total Equity</td>
+                            <td class="text-end pt-3 pe-2 border-top border-dark">
+                                ${{ total_equity|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="mt-5">
+                <table class="table table-borderless">
+                    <tr class="fw-bold fs-5 bg-light">
+                        <td class="ps-3 py-3 text-uppercase">Total Liabilities & Equity</td>
+                        <td class="text-end py-3 pe-2" style="border-top: 2px solid #000; border-bottom: 3px double #000;">
+                            ${{ total_liabilities|add:total_equity|floatformat:2|intcomma }}
+                        </td>
                     </tr>
                 </table>
             </div>
 
-            <div class="col-md-6">
-                <h5 class="text-uppercase fw-bold text-danger border-bottom pb-2">Liabilities</h5>
-                <table class="table table-borderless table-sm mb-4">
-                    {% for liab in liabilities %}
-                    <tr>
-                        <td>{{ liab.account_name }}</td>
-                        <td class="text-end">${{ liab.current_balance|floatformat:2|intcomma }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr class="fw-bold border-top border-dark">
-                        <td class="pt-2">Total Liabilities</td>
-                        <td class="text-end pt-2">${{ total_liabilities|floatformat:2|intcomma }}</td>
-                    </tr>
-                </table>
-
-                <h5 class="text-uppercase fw-bold text-primary border-bottom pb-2">Equity</h5>
-                <table class="table table-borderless table-sm">
-                    {% for eq in equity %}
-                    <tr>
-                        <td>{{ eq.account_name }}</td>
-                        <td class="text-end">${{ eq.current_balance|floatformat:2|intcomma }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr class="fw-bold border-top border-dark">
-                        <td class="pt-2">Total Equity</td>
-                        <td class="text-end pt-2">${{ total_equity|floatformat:2|intcomma }}</td>
-                    </tr>
-                </table>
-            </div>
         </div>
+        
+        <div class="text-center mt-5 pt-4 text-muted small no-print">
+            <p>Generated on {% now "F j, Y H:i" %}</p>
+        </div>
+
     </div>
 </div>
 
 <style>
-    .report-paper { max-width: 900px; margin: 0 auto; }
-    @media print { .no-print { display: none; } .report-paper { box-shadow: none !important; border: none !important; } }
+    /* Professional Document Styling */
+    .report-paper {
+        max-width: 850px;
+        margin: 0 auto;
+        font-family: 'Times New Roman', Times, serif; /* Classic financial font */
+    }
+    
+    .report-paper h2, .report-paper h3, .report-paper h5 {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Clean headers */
+    }
+
+    .fw-500 { font-weight: 500; }
+
+    /* Print Optimization */
+    @media print {
+        @page { margin: 0.5in; size: letter; }
+        body { background-color: white; -webkit-print-color-adjust: exact; }
+        .no-print { display: none !important; }
+        .report-paper { 
+            box-shadow: none !important; 
+            border: none !important; 
+            width: 100%; 
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .card-body { padding: 0 !important; }
+        /* Ensure table rows don't split awkwardly */
+        tr { break-inside: avoid; }
+    }
 </style>
 {% endblock %}

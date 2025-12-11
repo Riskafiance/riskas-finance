@@ -1716,43 +1716,66 @@ def income_statement(request):
     })
 
 @login_required
+@login_required
 def balance_sheet(request):
     company = get_company(request)
-    as_of_date = request.GET.get('as_of_date') or timezone.now().date().strftime('%Y-%m-%d')
-
-    def get_balance(group_types):
-        accs = Account.objects.filter(company=company, account_type__in=group_types)
-        data = []
-        tot = 0
-        for a in accs:
-            lines = JournalVoucherLine.objects.filter(account=a, journal_voucher__jv_date__lte=as_of_date, journal_voucher__status='Posted')
-            d = lines.aggregate(Sum('debit_amount'))['debit_amount__sum'] or 0
-            c = lines.aggregate(Sum('credit_amount'))['credit_amount__sum'] or 0
-            bal = (d - c) if a.normal_balance == 'Debit' else (c - d)
-            if bal != 0:
-                data.append({'name': a.account_name, 'amount': bal})
-                tot += bal
-        return data, tot
-
-    # Group the QBO types
-    assets, total_assets = get_balance(['Bank', 'Accounts Receivable', 'Other Current Assets', 'Fixed Assets', 'Other Assets'])
-    liabilities, total_liabilities = get_balance(['Accounts Payable', 'Credit Card', 'Other Current Liabilities', 'Long Term Liabilities'])
-    equity, total_equity = get_balance(['Equity'])
-
-    # Calculate Net Income
-    all_rev = JournalVoucherLine.objects.filter(account__company=company, account__account_type__in=['Income', 'Other Income'], journal_voucher__jv_date__lte=as_of_date, journal_voucher__status='Posted').aggregate(net=Sum('credit_amount') - Sum('debit_amount'))['net'] or 0
-    all_exp = JournalVoucherLine.objects.filter(account__company=company, account__account_type__in=['Cost of Goods Sold', 'Expenses', 'Other Expense'], journal_voucher__jv_date__lte=as_of_date, journal_voucher__status='Posted').aggregate(net=Sum('debit_amount') - Sum('credit_amount'))['net'] or 0
-    net_income_equity = all_rev - all_exp
     
-    context = {
-        'assets': assets, 'total_assets': total_assets,
-        'liabilities': liabilities, 'total_liabilities': total_liabilities,
-        'equity': equity, 'total_equity': total_equity,
-        'net_income_equity': net_income_equity,
-        'total_equity_and_liabilities': total_liabilities + total_equity + net_income_equity,
-        'as_of_date': as_of_date
-    }
-    return render(request, 'accounting/balance_sheet.html', context)
+    # 1. Define ALL possible names for Asset types
+    ASSET_TYPES = [
+        'Asset', 'Assets', 'Current Asset', 'Fixed Assets', 'Bank', 
+        'Cash', 'Accounts Receivable', 'Inventory', 'Other Current Assets', 
+        'Other Assets', 'Security Deposit'
+    ]
+    
+    # 2. Define ALL possible names for Liability types
+    LIABILITY_TYPES = [
+        'Liability', 'Liabilities', 'Current Liability', 'Long Term Liabilities', 
+        'Credit Card', 'Accounts Payable', 'Other Current Liabilities', 
+        'Payroll Liabilities', 'Taxes Payable'
+    ]
+    
+    # 3. Define ALL possible names for Equity types
+    EQUITY_TYPES = [
+        'Equity', 'Owner\'s Equity', 'Shareholder\'s Equity', 
+        'Retained Earnings', 'Capital', 'Opening Balance Equity'
+    ]
+
+    # 4. Filter the database using these lists
+    assets = Account.objects.filter(company=company, account_type__in=ASSET_TYPES).order_by('account_number')
+    liabilities = Account.objects.filter(company=company, account_type__in=LIABILITY_TYPES).order_by('account_number')
+    equity = Account.objects.filter(company=company, account_type__in=EQUITY_TYPES).order_by('account_number')
+
+    # 5. Calculate Totals safely (treating None as 0)
+    total_assets = assets.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+    total_liabilities = liabilities.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+    total_equity = equity.aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+
+    # 6. Check for Net Income (Revenue - Expenses) to add to Equity dynamically
+    # This ensures the Balance Sheet actually balances!
+    revenue_types = ['Revenue', 'Income', 'Other Income', 'Sales']
+    expense_types = ['Expense', 'Expenses', 'Cost of Goods Sold', 'Other Expense']
+    
+    total_revenue = Account.objects.filter(company=company, account_type__in=revenue_types).aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+    total_expenses = Account.objects.filter(company=company, account_type__in=expense_types).aggregate(Sum('current_balance'))['current_balance__sum'] or decimal.Decimal(0)
+    
+    # Calculate Net Income (Revenue is normally Credit, Expense is Debit)
+    # Note: Logic depends on how you store balances. Usually Revenue is stored as positive credit.
+    # We'll assume standard storage where Credits increase Revenue/Equity and Debits increase Assets/Expenses.
+    # If your system stores everything as positive numbers based on normal balance:
+    current_net_income = total_revenue - total_expenses
+
+    # Add Net Income to Total Equity for the report display
+    total_equity += current_net_income
+
+    return render(request, 'accounting/balance_sheet.html', {
+        'assets': assets,
+        'liabilities': liabilities,
+        'equity': equity,
+        'total_assets': total_assets,
+        'total_liabilities': total_liabilities,
+        'total_equity': total_equity,
+        'current_net_income': current_net_income, # Optional: Pass this if you want to show it as a line item
+    })
 
 def ar_aging(request):
     # Placeholder for AR Aging
