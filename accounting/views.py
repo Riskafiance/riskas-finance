@@ -282,14 +282,13 @@ def vendor_list(request):
     return render(request, 'accounting/vendor_list.html', {'vendors': vendors})
 
 @login_required
+@login_required
 def add_vendor(request):
     company = get_company(request)
     if request.method == 'POST':
         # --- PHONE FORMATTING LOGIC ---
         raw_phone = request.POST.get('phone', '')
-        # Remove everything that is not a number
         digits = re.sub(r'\D', '', raw_phone)
-        # If it is 10 digits, format it as (XXX) XXX-XXXX
         formatted_phone = raw_phone
         if len(digits) == 10:
             formatted_phone = f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
@@ -299,9 +298,8 @@ def add_vendor(request):
             company=company,
             name=request.POST['name'],
             email=request.POST.get('email', ''),
-            phone=formatted_phone,  # <--- Save the formatted version
+            phone=formatted_phone,
             address=request.POST.get('address', ''),
-            account_number=request.POST.get('account_number', '')
         )
         return redirect('vendor_list')
     return render(request, 'accounting/add_vendor.html')
